@@ -822,17 +822,18 @@
 	<td width="1"></td>
 
 	<td>
-	  <span class="title2">Certified theorem proving</span>
+	  <span class="title2">Certified theorem proving (Nuprl in Coq)</span>
 	  <br/>
 
-	  Stuart Allen's Partial Equivalence Relation (PER) semantics
-	  provides a semantics for Nuprl's type theory and allows one
-	  to prove that Nuprl's derivation rules are valid.  Until
-	  recently these proofs were done by hand.  In order to prove
-	  that these rules are correct, we have implemented this PER
-	  semantics in the Coq proof assistant.  This implementation
-	  (1) provides a bridge between Nuprl and Coq, and (2) is the
-	  basis for building a certified version of Nuprl.
+	  Allen's Partial Equivalence Relation (PER) semantics provides a
+	  semantics for Nuprl's type theory that allows one to prove that
+	  Nuprl's inference rules are valid, and therefore that Nuprl is
+	  consistent.  Until recently, these proofs were done by hand.  In
+	  order to formally prove that these rules are correct (and therefore
+	  that Nuprl is consistent), we have implemented this PER semantics
+	  using the Coq proof assistant.  This implementation (1) provides a
+	  bridge between Nuprl and Coq, and (2) is the basis for developing a
+	  certified version of Nuprl.
 
 	  <br/>
 	  <br/>
@@ -840,7 +841,138 @@
 	</td>
       </tr>
 
+
       <tr>
+
+	<td width="1"></td>
+
+	<td>
+	  <span class="title2">Certified theorem proving (KeYmaera X in Coq)</span>
+	  <br/>
+
+	  KeYmaera X is a theorem prover for cyber-physical systems (modeled
+	  as hybrid systems) that implements a logic called Differential
+	  Dynamic Logic (dL for short).  KeYmaera X has a small core thanks a
+	  uniform substitution based proof calculus.  We have implemented and
+	  verified this core in Coq.  This was joint work
+	  with <a href="http://www.cs.cmu.edu/~bbohrer/">Brandon
+	  Bohrer</a> and <a href="http://symbolaris.com/">Andre
+	  Platzer</a> from CMU, who have implemented and verified
+	  KeYmaera's core in Isabelle.
+
+	  <br/>
+	  <br/>
+
+	</td>
+      </tr>
+
+
+      <tr>
+
+	<td width="1"></td>
+
+	<td>
+	  <span class="title2">Intuitionistic and Nominal Type Theory</span>
+	  <br/>
+
+	  Using our formalization of Nuprl in Coq, we are turning Nuprl into an
+	  intuitionistic type theory, i.e., we have proved that some
+	  versions of Brouwer's continuity and bar induction principles are valid
+	  w.r.t. Nuprl's PER semantics.  In order to prove the validity of such
+	  continuity principles we have turned Nuprl into a nominal type theory.
+	  It remains open whether stronger continuity and bar induction rules
+	  are also valid.
+
+	  <br/>
+	  <br/>
+
+	</td>
+      </tr>
+
+
+      <tr>
+
+	<td width="1"></td>
+
+	<td>
+	  <span class="title2">EventML</span>
+	  <br/>
+
+	  EventML is a ML-like constructive
+	  specification language that implements a paradigm for verified
+	  programming.  It gives precedence to the programming task, and also
+	  allows programmers to cooperate with a proof assistant in order to
+	  structure arguments of correctness.
+	  It is designed specifically to cooperate with the Nuprl proof
+	  assistant in order to develop correct-by-construction asynchronous
+	  protocols.
+
+	  <br/>
+	  <br/>
+
+	</td>
+      </tr>
+
+
+      <tr>
+
+	<td width="1"></td>
+
+	<td>
+	  <span class="title2">Synthesis and verification of distributed protocols</span>
+	  <br/>
+
+	  Using EventML, we have specified, synthesized, and
+	  verified safety properties of the Multi-Paxos protocol.
+	  To do so,
+	  we have automated some patterns of reasoning;
+	  and to get efficient code, we have built a process
+	  optimizer in Nuprl.
+	  We are reusing this methodology to develop other
+	  provably correct protocols, striving towards more resilient and
+	  trustworthy systems.
+	  One of our current goal is to verify Byzantine fault tolerant
+	  protocols written in C using, among other things, the Verified
+	  Software Toolchain (VST).
+
+	  <br/>
+	  <br/>
+
+	</td>
+      </tr>
+
+
+      <tr>
+
+	<td width="1"></td>
+
+	<td>
+	  <span class="title2">Skalpel</span>
+	  <br/>
+
+	  Programming languages
+	  such as SML
+	  have sophisticated, flexible and
+	  safe type systems.
+	  Unfortunately, the type error messages for incorrect programs are confusing.
+	  Skalpel implements a promising approach to making type errors easier to understand and
+	  fix called type error slicing, in which slices (program points)
+	  containing all and only the information needed by the programmer to
+	  understand and fix a type error are identified and
+	  exhibited.
+	  Check out <a href="http://www.macs.hw.ac.uk/ultra/skalpel/">the
+	    web page of our project</a> where you can download
+	  packages for Debian and Red-Hat-based systems as well as
+	  a web demo.
+
+	  <br/>
+	  <br/>
+
+	</td>
+      </tr>
+
+
+<!--      <tr>
 
 	<td width="1"></td>
 
@@ -879,20 +1011,21 @@
 	  to develop other correct-by-construction protocols.
 
 	</td>
-      </tr>
+      </tr>-->
 
     </table>
 
     <br/>
     <br/>
-    During my PhD I was involved in the following projects:
+
+    In addition to the Skalpel project, during my PhD I was involved in the following projects:
 
     <br/>
     <br/>
 
     <table>
 
-      <tr>
+<!--      <tr>
 
 	<td width="1"></td>
 
@@ -929,7 +1062,7 @@
 	  <!--<br/><br/>-->
 	</td>
 
-      </tr>
+      </tr>-->
 
       <tr>
 
@@ -1085,7 +1218,7 @@
     <ul>
       <li>
 	Program Committee member of CPP 2017.
-      <li>
+      </li>
       <li>
 	Helper at <a href="http://www.cs.nott.ac.uk/~gmh/icfp09.html">ICFP 2009</a>.
       </li>
