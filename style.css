@@ -1,10 +1,10 @@
 body
 {
   color            : black;
-  background-color : #E0E0E0; /*#DCDCDC;*/ /*rgb(230, 200, 123);*/
+  background-color : #FFFFFF /*#E0E0E0;*/ /*#DCDCDC;*/ /*rgb(230, 200, 123);*/
   font-family      : Verdana, Arial, Helvetica;
   font-size        : 0.9em;
-  border:15px solid white;
+  border:15px solid pink;
   margin:50px 15%;
 }
 
