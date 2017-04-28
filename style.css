@@ -2,9 +2,9 @@ body
 {
   color            : black;
   background-color : #FFFFFF /*#E0E0E0;*/ /*#DCDCDC;*/ /*rgb(230, 200, 123);*/
-  font-family      : Verdana, Arial, Helvetica;
+  font-family      : Comic sans MS/*Verdana, Arial, Helvetica;*/
   font-size        : 0.9em;
-  border:15px solid pink;
+  border:15px solid rgb(255,20,147);
   margin:50px 15%;
 }
 
@@ -26,6 +26,8 @@ A:hover   {text-decoration: underline}
 A.apdf {color: rgb(20, 50, 120)}
 
 A.missed {color: rgb(165, 42, 42)}
+
+.name {font-weight: bold; font-family: "Comic sans MS"; font-size: 40px; color: rgb(139,0,139)/*rgb(153, 102, 51)*/;}
 
 .titleart {color: rgb(10, 40, 0); font-weight: 500;}
 
