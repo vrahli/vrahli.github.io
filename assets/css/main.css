@@ -1805,6 +1805,10 @@
 		border-color: #e5474b;
 	}
 
+	hblock {
+	    display:none;
+	}
+
 	hr {
 		border-bottom-color: #e5474b;
 	}

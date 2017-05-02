@@ -49,12 +49,18 @@
 					<p>Allen's Partial Equivalence Relation (PER) semantics provides a
 					semantics for Nuprl's type theory that allows one to prove that
 					Nuprl's inference rules are valid, and therefore that Nuprl is
-					consistent.  Until recently, these proofs were done by hand.  In
+					consistent.  Until recently
+					our <a href="articles/semantics-ITP-2014-04-18.pdf">ITP
+					2014 paper</a>, these proofs
+					were done by hand.  In
 					order to formally prove that these rules are correct (and therefore
 					that Nuprl is consistent), we have implemented this PER semantics
-					using the Coq proof assistant.  This implementation (1) provides <a href=""></a>
-					bridge between Nuprl and Coq, and (2) is the basis for developing <a href=""></a>
-					certified version of Nuprl.</p>
+					using the Coq proof assistant.  This implementation (1) provides a
+					bridge between Nuprl and Coq, and (2) is the basis for developing
+					certified versions of
+					  Nuprl.
+					This is joint work with <a href="http://www.cs.cornell.edu/~aa755/">Abhishek Anand</a>
+					and <a href="http://www.nuprl.org/html/PeopleErsatz/markb.html">Mark Bickford</a>.</p>
 
 					<h3>Certified theorem proving (KeYmaera X in Coq)</h3>
 
@@ -62,11 +68,14 @@
 					as hybrid systems) that implements a logic called Differential
 					Dynamic Logic (dL for short).  KeYmaera X has a small core thanks a
 					uniform substitution based proof calculus.  We have implemented and
-					verified this core in Coq.  This was joint work
+					verified this core in Coq.
+					Check
+					out <a href="https://github.com/LS-Lab/Coq-dL">our
+					implementation</a> for details.  This was joint work
 					with <a href="http://www.cs.cmu.edu/~bbohrer/">Brandon
 					  Bohrer</a> and <a href="http://symbolaris.com/">Andre
 					  Platzer</a> from CMU, who have implemented and verified
-					KeYmaera's core in Isabelle.</p>
+					KeYmaera's core in <a href="https://github.com/LS-Lab/Isabelle-dL">Isabelle</a>.</p>
 
 					<h3>Intuitionistic and Nominal Type Theory</h3>
 
@@ -101,8 +110,9 @@
 					provably correct protocols, striving towards more resilient and
 					trustworthy systems.
 					One of our current goal is to verify Byzantine fault tolerant
-					protocols written in C using, among other things, the Verified
-					Software Toolchain (VST).</p>
+					protocols written in C using,
+					among other things, the <a href="http://vst.cs.princeton.edu/">Verified
+					Software Toolchain (VST)</a>.</p>
 
 					<h3>Skalpel</h3>
 
@@ -117,7 +127,8 @@
 					understand and fix a type error are identified and
 					exhibited.
 					Check out <a href="http://www.macs.hw.ac.uk/ultra/skalpel/">the
-					  web page of our project</a> where you can download
+					  web page of our project</a>,
+					from which you can download
 					packages for Debian and Red-Hat-based systems as well as
 					  a web demo.</p>
 
