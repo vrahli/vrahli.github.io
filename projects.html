@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<!--
+	Introspect by TEMPLATED
+	templated.co @templatedco
+	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+	<head>
+		<title>Vincent Rahli - Projects</title>
+
+		<meta charset="utf-8" />
+
+		<meta name="keywords"    content="vincent rahli, SnT, CritiX, PRL group, Nuprl, Cornell"/>
+		<meta name="Description" content="Vincent Rahli's projects"/>
+		<meta name="Author"      content="Vincent Rahli"/>
+		<meta name="viewport"    content="width=device-width, initial-scale=1, user-scalable=no" />
+
+		<link rel="stylesheet" href="assets/css/main.css" />
+	</head>
+	<body>
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="index.html" class="logo">Vincent Rahli</a>
+					<nav id="nav">
+						<a href="index.html">Home</a>
+						<a href="projects.html">Projects</a>
+						<a href="papers.html">Papers</a>
+						<a href="talks.html">Talks</a>
+						<a href="lectures.html">Lectures</a>
+						<a href="contact.html">Contact</a>
+					</nav>
+				</div>
+			</header>
+			<a href="#menu" class="navPanelToggle"><span class="fa fa-bars"></span></a>
+
+		<!-- Main -->
+			<section id="main" >
+				<div class="inner">
+					<header class="major special">
+						<h1>Recent Projects</h1>
+					</header>
+
+					</br>
+
+					<h3>Certified theorem proving (Nuprl in Coq)</h3>
+
+					<p>Allen's Partial Equivalence Relation (PER) semantics provides a
+					semantics for Nuprl's type theory that allows one to prove that
+					Nuprl's inference rules are valid, and therefore that Nuprl is
+					consistent.  Until recently, these proofs were done by hand.  In
+					order to formally prove that these rules are correct (and therefore
+					that Nuprl is consistent), we have implemented this PER semantics
+					using the Coq proof assistant.  This implementation (1) provides <a href=""></a>
+					bridge between Nuprl and Coq, and (2) is the basis for developing <a href=""></a>
+					certified version of Nuprl.</p>
+
+					<h3>Certified theorem proving (KeYmaera X in Coq)</h3>
+
+					<p>KeYmaera X is a theorem prover for cyber-physical systems (modeled
+					as hybrid systems) that implements a logic called Differential
+					Dynamic Logic (dL for short).  KeYmaera X has a small core thanks a
+					uniform substitution based proof calculus.  We have implemented and
+					verified this core in Coq.  This was joint work
+					with <a href="http://www.cs.cmu.edu/~bbohrer/">Brandon
+					  Bohrer</a> and <a href="http://symbolaris.com/">Andre
+					  Platzer</a> from CMU, who have implemented and verified
+					KeYmaera's core in Isabelle.</p>
+
+					<h3>Intuitionistic and Nominal Type Theory</h3>
+
+					<p>Using our formalization of Nuprl in Coq, we are turning Nuprl into an
+					intuitionistic type theory, i.e., we have proved that some
+					versions of Brouwer's continuity and bar induction principles are valid
+					w.r.t. Nuprl's PER semantics.  In order to prove the validity of such
+					continuity principles we have turned Nuprl into a nominal type theory.
+					It remains open whether stronger continuity and bar induction rules
+					are also valid.</p>
+
+					<h3>EventML</h3>
+
+					<p>EventML is a ML-like constructive
+					specification language that implements a paradigm for verified
+					programming.  It gives precedence to the programming task, and also
+					allows programmers to cooperate with a proof assistant in order to
+					structure arguments of correctness.
+					It is designed specifically to cooperate with the Nuprl proof
+					assistant in order to develop correct-by-construction asynchronous
+					protocols.</p>
+
+					<h3>Synthesis and verification of distributed protocols</h3>
+
+					<p>Using EventML, we have specified, synthesized, and
+					verified safety properties of the Multi-Paxos protocol.
+					To do so,
+					we have automated some patterns of reasoning;
+					and to get efficient code, we have built a process
+					optimizer in Nuprl.
+					We are reusing this methodology to develop other
+					provably correct protocols, striving towards more resilient and
+					trustworthy systems.
+					One of our current goal is to verify Byzantine fault tolerant
+					protocols written in C using, among other things, the Verified
+					Software Toolchain (VST).</p>
+
+					<h3>Skalpel</h3>
+
+					<p>Programming languages
+					such as SML
+					have sophisticated, flexible and
+					safe type systems.
+					Unfortunately, the type error messages for incorrect programs are confusing.
+					Skalpel implements a promising approach to making type errors easier to understand and
+					fix called type error slicing, in which slices (program points)
+					containing all and only the information needed by the programmer to
+					understand and fix a type error are identified and
+					exhibited.
+					Check out <a href="http://www.macs.hw.ac.uk/ultra/skalpel/">the
+					  web page of our project</a> where you can download
+					packages for Debian and Red-Hat-based systems as well as
+					  a web demo.</p>
+
+					</br>
+
+					<header>
+						<h1>Past Projects</h1>
+					</header>
+
+					</br>
+
+					<h3>Semantics of expansion</h3>
+
+					<p>Intersection types
+					introduce type polymorphism in a finitary way.  Expansion was
+					introduced to recover the principal typing property
+					in such systems.
+					The study of realisability semantics for such systems
+					with expansion
+					might help casting some light on the expansion mechanism.</p>
+
+					<h3>Reducibility proofs</h3>
+
+					<p>Reducibility is a
+					  method based on realisability semantics
+					  where the idea is to interpret types by sets of &lambda;-terms
+					  closed under some properties.
+					  This method
+					  seems promising in generalising diverse properties' proofs of the
+					  (typed or untyped) &lambda;-calculus.</p>
+				</div>
+			</section>
+
+	</body>
+</html>
