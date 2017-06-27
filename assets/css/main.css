@@ -1805,10 +1805,6 @@
 		border-color: #e5474b;
 	}
 
-	hblock {
-	    display:none;
-	}
-
 	hr {
 		border-bottom-color: #e5474b;
 	}
@@ -2532,6 +2528,13 @@
 	}
 
 	section .inner {
+		max-width: 65em;
+		width: calc(100% - 6em);
+		margin: 0 auto;
+/*		font-size: 25px;*/
+	}
+
+	section .innerhome {
 		max-width: 65em;
 		width: calc(100% - 6em);
 		margin: 0 auto;
