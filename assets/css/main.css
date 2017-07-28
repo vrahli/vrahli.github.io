@@ -2547,6 +2547,12 @@
 			section .inner {
 				max-width: 90%;
 				width: 90%;
+				/*size: 25px;*/
+			}
+
+			section .innerhome {
+				max-width: 90%;
+				width: 90%;
 				size: 25px;
 			}
 
@@ -2672,6 +2678,11 @@
 	}
 
 		.wrapper > .inner {
+			margin: 0 auto;
+			width: 60em;
+		}
+
+		.wrapper > .innerhome {
 			margin: 0 auto;
 			width: 60em;
 		}
@@ -3094,11 +3105,19 @@
 				width: 65em;
 			}
 
+			.wrapper > .innerhome {
+				width: 65em;
+			}
+
 		}
 
 		@media screen and (max-width: 980px) {
 
 			.wrapper > .inner {
+				width: 100%;
+			}
+
+			.wrapper > .innerhome {
 				width: 100%;
 			}
 
@@ -3512,9 +3531,23 @@
 			line-height: 1.5;
 		}
 
+		#banner .innerhome {
+			max-width: 65em;
+			width: calc(100% - 6em);
+			margin: 0 auto;
+			position: relative;
+			z-index: 10000;
+			line-height: 2.0;
+		}
+
 			@media screen and (max-width: 480px) {
 
 				#banner .inner {
+					max-width: 90%;
+					width: 90%;
+				}
+
+				#banner .innerhome {
 					max-width: 90%;
 					width: 90%;
 				}
