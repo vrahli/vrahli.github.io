@@ -1,0 +1,333 @@
+
+We would like to thank the reviewers for taking the time to read and
+review our paper.  We would cordially like to address the comments
+made by the reviewers below.  We start by summarizing our response to
+the main concerns in (A), then we provide in (B) detailed answers to
+the main comments made by each reviewer.
+
+
+A- Response Summary
+==========================
+
+Before responding to the detailed comments by the reviewers, we want
+to stress the importance of the work presented, as well as its
+relevance to the CAV community.  As some reviewers pointed out, it
+both provides a higher degree of confidence in Nuprl proofs, as well
+as improves proof assistance in general.  Furthermore, this tool is a
+critical component of a wider project aimed at making the Nuprl proof
+assistant more widely available to users, by building a fully verified
+version of Nuprl in Coq.  This will help spread as well as preserve
+the knowledge accumulated for over more than 35 years in Nuprl.
+
+We proved the validity of over 150 Nuprl rules already, which are the
+core of Nuprl in the sense that they are the most commonly used rules
+in the current Nuprl library.  While it is true that our tool does not
+yet support all of those, there is no actual limitation that will
+prevent us from adding support for the remaining rules.  Doing so is
+straightforward, yet extremely tedious.  Extending the tool to support
+a new rule requires to: (1) provide a validity proof for the rule
+(either from the kernel of 150 rules, or by producing a new proof),
+(2) add support for the rule in our Coq checker of Nuprl proofs, and
+(3) add support for this rule in our proof translator.  Therefore, the
+full support of the tool for all of Nuprl will have to be developed
+over time. The tool presented here, while does not yet support all of
+Nuprl’s rules, still provides the full necessary framework for the
+desired translation (thus exceeding the notion of a proof of concept).
+
+Due to the joint FLOC submission deadlines, [14] has been submitted
+simultaneously to this paper.  We do apologize for not providing an
+arXiv draft for the sake of the reviewer.  However, we provide the
+link here: https://vrahli.github.io/articles/mon.pdf.  As opposed to
+our CAV submission, [14] studied the theoretical framework necessary
+to support an evolving library of definitions and facts.  It did not
+present the concrete tool in details, only briefly mentioned its
+existence in section 6.  Thus, the CoqPRL tool presented here is
+indeed novel.
+
+Due to lack of space and having seen that often tool papers do not
+contain related work section, we omitted discussing the related work
+in the current version.  However, we shall add such a discussion in
+the final version, which will include the suggestions made by the
+reviewers, as well as works on HOL Light, CakeML, and other systems.
+Another relevant line of work concerns translating proofs between two
+logical systems, e.g. using Dedukti.
+
+
+B- Detailed response
+==========================
+
+
+Review 1
+--------
+
+Below are detailed responses to the reasons which led the reviewer to
+give the paper only a "weak accept", by their own statement.
+
+(1) This tool is part of a wider project to make Nuprl more widely
+available to users, as explained in A.
+
+(2) The tool can be straightforwardly extended with new rules, as
+explained in A.
+
+(3) As the reviewer pointed out, the purpose of the tool is to make
+critical use of our formalization of Nuprl in Coq, so as to benefit
+from validity checks for Nuprl proofs.
+
+(4) Our goal is that the results proved in Nuprl would be reusable in
+a verified version of Nuprl, which we are building within Coq.  We do
+see however, how this last paragraph in the introduction might be
+misinterpreted, and we shall rephrase it in the final version.
+
+(5) There is much more to be said about the benefits of Nuprl (e.g.,
+reasoning about partial functions, reasoning about computation through
+Howe's bisimulation relation), but due to lack of space we could not
+elaborate on that.  We will happily do so in the final version of the
+paper, as well as improve presentation.
+
+*Detailed comments:
+
+- Regarding the growth in the number of proof assistants: In addition
+to Lean, there is also Idris, F-star, Epigram, RedPRL, cubicaltt,
+Andromeda, to cite only a few.
+
+- Regarding the concept of a library: Since we are formalizing Nuprl
+features we had to also provide support for formally handling the
+underlying library.  This formalization is what we mean by `defining
+the concept of a library’, which is elaborated in [14].
+
+- Harrison's verification of HOL Light in HOL Light, which we are very
+familiar with and mention in [14], is indeed worth mentioning and we
+shall do so in the final version.
+
+
+Review 2
+--------
+
+As explained in A, we purposely left out a discussion on related
+works.  We will be happy to include it in the final version of the
+paper, and we appreciate the reviewers references.
+
+Rather than providing a way to interact between Nuprl's and Coq's type
+theories, the goal of our tool is to import Nuprl proofs within our
+verified version of Nuprl, which we are building using Coq.  We do see
+however, how the last paragraph in the introduction might be
+misinterpreted, and we shall rephrase it in the final version.
+
+
+* Minor remarks and questions:
+
+- Because the submission was supposed to be anonymized we did not
+provide a link to the online version of our tool.  We will do that in
+the final version.
+
+- The straightforward extensibility of the tool is addressed in A.
+
+- As noted in the final section, our tool does not yet contain OCaml
+code extracted from Coq.  The OCaml code was written directly in OCaml
+(including the XML parser).
+
+- It's true that now one has to also trust Coq.  However, if our tool
+accepts a proof, it gives extra assurance that the proof is indeed
+correct.  As the reviewer pointed out, one does not necessarily need
+to trust the OCaml code because one can simply check that the
+statement proved in Nuprl is the same as the statement proved in
+our version of Nuprl implemented in Coq.
+
+- The label "Verified" refers to the Coq system and signifies the
+additional assurance the Coq proof provides for the correctness of the
+original Nuprl proof.
+
+- We have actually explored this direction (see
+https://github.com/vrahli/NuprlInCoq/blob/master/rules/proof_with_lib.v).
+However, we have found that the non-dependent version was
+significantly faster.
+
+- We are using the `compute’ conversion tactic.  We shall make that
+explicit in the final version of the paper.
+
+- As pointed out in A, there are no real limitations in doing so,
+simply a matter of tedious work.
+
+
+Review 3
+--------
+
+As mention in A, we regret not providing a draft of
+[14] for the reviewers, as we feel it would have clarified many of the
+comments made by the reviewer (we provide a link in A).  As specified
+in the call for tool papers, we tried to restrict repeating the theory
+involved, and only present the necessary pieces.  We will add further
+details and discussions in the final version.
+
+We will also make the connection between the internal representation
+to the proof script, as well as the library definition, explicit in
+the final version of the paper.
+
+Verifying the correctness of our translator is orthogonal to our goal
+here.  Our goal is merely to provide a useful translation from proofs
+within Nuprl to proofs within our verified version of Nuprl in Coq.
+Our backend proof checker implemented in Coq is then here to ensure
+that the generated proofs are indeed valid.
+
+
+Review 4
+--------
+
+The goal of this tool is to provide a bridge between the current
+version of Nuprl and our verified version of Nuprl in Coq.  In a way,
+our verified version of Nuprl in Coq in combination with CoqPRL will
+extend the capabilities of Nuprl by making it more widely accessible.
+
+
+Review 5
+--------
+
+(*) ”I have doubts about the scalability of so deep an embedding, but
+nonetheless having bridge between the Nuprl and Coq worlds is
+interesting.”
+
+Coq is a functional programming language very much similar to other
+state-of-the-art functional programming languages (except that it
+comes with a very expressive type system).  We used, among other
+things, Coq as a programming language to implement terms, proof trees,
+libraries, etc.  (In addition we proved properties about those.)  Once
+we've extracted OCaml code, we will be able to compile our code using
+OCaml's compiler.  We are not sure why the reviewer is concerned with
+scalability issues.
+
+
+Review 6
+--------
+
+(*) Coverage: “Due to the lack of expertise, reviewer could not
+construct/alter another example/proof to check the extensibility. It
+would have been better had a few small examples and proofs been given
+in the artifact along with the instruction to validate their
+portability.”
+
+We thank the reviewer for pointing this out, nevertheless the goal is
+not to construct or alter examples by hand, rather to generate them
+automatically using Nuprl and CoqPRL.  Accordingly, we have expended
+the README file to explain how one may produce new examples.
+
+(*) Instructions: “The description of the tool is minimal with a couple of
+scripts to be run on the example.”
+
+We have expanded the README file according to all the comments
+made by the reviewers.
+
+(*) Quality: “…it is not clear how to extend/modify it. Roles of
+various directory/file is not clear. This tool is probably meant for
+users who are well verse with the proof assistants for which proofs
+are to be ported.”
+
+We have added the following paragraph, which explains how to extend
+CoqPRL in order to support more rules, to README file:
+
+“To extend the tool with a new rule, you have to:
+
+1. Provide a proof for the validity of the rule (either from the
+kernel of rules we have already validated, or by producing a new
+proof).
+
+2. Add support for this rule in our Coq checker of Nuprl proofs in
+`../rules/proof_with_lib_non_dep.v`.  There are a few things to add
+such as: a new constructor for `proof_step`; a description of what it
+means for such a rule to be valid in `valid_proof_node_context`; etc.
+Best is to look at an example such as `proof_step_function_equality`
+and do something similar for the new rule.
+
+3. Add support for this rule in our proof translator in `Parse.ml` by
+adding a new case to the function  `print_proof_tree`.  Again, the
+best thing to do is to look at an example.”
+
+
+
+Review 7
+--------
+
+(*) “I would have expected the example to come with a high-level
+description of its content.”
+
+We have added the following description of our examples to the README file:
+
+“This directory contains two examples so far:
+
+- `uall_wf.term-list`
+
+   This contains a proof that the `uall` (i.e., uniform universal
+   quantifier) operator is well-formed in the sense that it builds
+   propositions out of families of propositions.
+
+- `true_wf.term-list`
+
+   This contains a proof that the proposition True is indeed a
+   proposition.
+
+
+We selected these examples because they are simple enough to be proven
+fully automatically in Nuprl.  Because these proofs are automatically
+generated, they use a large amount of fundamental rules, as well as
+definitions and proofs already stored in the current library.”
+
+
+(*) Coverage: “I can believe the provided examples are large and rich
+enough to test most features of a tool of this particular kind. But
+since I cannot actually read the examples I am not able to assess
+whether this is actually the case. The grade on this criteria could be
+raised to 3: meets expectation with proper documentation, or even
+higher if some help was given to produce new examples.”
+
+We added a description of the examples to the README file (also see
+above), and we have also added a paragraph which explains how to
+produce new examples (see also the response to Review 6).
+
+(*) Instructions: “I would have appreciated an additional instruction on
+building the NuPRL-exported file taken as input by the artifact.”
+
+We have added the following paragraph to the README file, which
+explains the construction of the Nuprl-exported input file:
+
+“Generating primitive proof trees within Nuprl
+ ---------------------------------------------
+
+To generate such files, you first need to connect to Nuprl.  (If you
+don't already have an account, look at
+`http://www.nuprl.org/html/NuprlSystem.html` to see how to get an
+account.)  Then in the Evaluator run:
+
+  `primitive_export b1 b2 t l`
+
+where `b1` is a Boolean (true/false) that indicates whether or not to
+overwrite the file; `b2` is a Boolean that indicates whether or not to
+include the dependency information used to the graph used to find the
+list of objects to export; `t` is a token which is going to be used as
+base for the filename; `l` is a list of objects used as seed for
+closure of objects to export.
+
+A token is a sequence of characters delimited by backquotes.  For the
+objects, you'll have to click on an object somewhere in the library to
+copy a pointer to the object, and then type C-y to paste the
+pointer---it has to be preceded by `ioid`.
+
+It is usually safe to use true for `b1` and `b2`.
+
+The file will be exported to
+/usr/nuprl/public/tmp/primitive-export/<name>.term-list.  If `b1` is
+false, then the file will be exported to
+/usr/nuprl/public/tmp/primitive-export/<name>-<datetime>.term-list.”
+
+(*) Quality: “Instructions point to one interesting file, but gives no
+information on how the rest is structured. Comments in the source
+files are sparse, to say the least.”
+
+We have added the following roadmap to the README file:
+
+“As hinted above, the main file is `Parse.ml`.  It contains the
+translator from Nuprl proofs to proofs in our verified
+re-implementation of Nuprl in Coq.  It uses: `NuprlTerms.ml`, which
+contains the abstract syntax for Nuprl terms; `ParseNuprlAscii.ml`,
+which contains the parser of XML-file that Nuprl generates.”
+
+We are currently working on adding more comments to the code,
+following the reviewer’s request.
