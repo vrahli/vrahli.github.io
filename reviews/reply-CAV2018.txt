@@ -117,8 +117,9 @@ misinterpreted, and we shall rephrase it in the final version.
 * Minor remarks and questions:
 
 - Because the submission was supposed to be anonymized we did not
-provide a link to the online version of our tool.  We will do that in
-the final version.
+provide a link to the online version of our tool (which is here:
+https://github.com/vrahli/NuprlInCoq/blob/master/nuprl_checker).  We
+will do that in the final version.
 
 - The straightforward extensibility of the tool is addressed in A.
 
@@ -208,7 +209,8 @@ portability.”
 We thank the reviewer for pointing this out, nevertheless the goal is
 not to construct or alter examples by hand, rather to generate them
 automatically using Nuprl and CoqPRL.  Accordingly, we have expended
-the README file to explain how one may produce new examples.
+the README file to explain how one may produce new examples (see
+https://github.com/vrahli/NuprlInCoq/blob/master/nuprl_checker/README.md).
 
 (*) Instructions: “The description of the tool is minimal with a couple of
 scripts to be run on the example.”
