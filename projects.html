@@ -45,6 +45,47 @@
 
 					</br>
 
+					<h3>Asphalion</h3>
+
+					<p>
+					Asphalion is an extension of Velisarios, also implemented in Coq, that
+					supports the verification of hybrid fault-tolerant systems, i.e.,
+					systems that combine components that can fail arbitrarily and
+					components that can only crash on failure.
+					To reason about such system, Asphalion provides a sound knowledge
+					sequent calculus that features both non-trusted and trusted
+					knowledge operators.
+					Using Asphalion we have verified one of the main safety
+					property of the MinBFT landmark protocol.
+					This is joint work with
+					<a href="http://wwwen.uni.lu/snt/people/ivana_vukotic">Ivana Vukotic</a>,
+					    <a href="http://wwwen.uni.lu/snt/people/marcus_voelp">Marcus Volp</a>,
+					    and <a href="https://wwwen.uni.lu/snt/people/paulo_esteves_verissimo">Paulo Verissimo</a>
+					</p>
+
+
+					<h3>Velisarios</h3>
+
+					<p>
+					  Velisarios is an extension of EventML, implemented in Coq, that
+					  supports the verification of Byzantine fault-tolerant systems, and
+					  reasoning about  distributed epistemic knowledge.
+					  Using Velisarios we have verified the standard agreement safety
+					  property of the PBFT
+					  landmark protocol.
+					  Check
+					  out <a href="https://github.com/vrahli/Velisarios">our implementation</a> for details.
+					  In the future, we want to support proving properties such as
+					  liveness and timeliness, and we want to connect Velisarios with the Verified
+					  Software Toolchain (VST) in order to verify the correctness of
+					  programs written in C.
+					This is joint work with
+					<a href="http://wwwen.uni.lu/snt/people/ivana_vukotic">Ivana Vukotic</a>,
+					    <a href="http://wwwen.uni.lu/snt/people/marcus_voelp">Marcus Volp</a>,
+					    and <a href="https://wwwen.uni.lu/snt/people/paulo_esteves_verissimo">Paulo Verissimo</a>
+					</p>
+
+
 					<h3>Certified theorem proving (Nuprl in Coq)</h3>
 
 					<p>Allen's Partial Equivalence Relation (PER) semantics provides a
@@ -61,7 +102,9 @@
 					certified versions of
 					  Nuprl.
 					This is joint work with <a href="http://www.cs.cornell.edu/~aa755/">Abhishek Anand</a>
-					and <a href="http://www.nuprl.org/html/PeopleErsatz/markb.html">Mark Bickford</a>.</p>
+					and <a href="http://www.nuprl.org/html/PeopleErsatz/markb.html">Mark Bickford</a>.
+					</p>
+
 
 					<h3>Certified theorem proving (KeYmaera X in Coq)</h3>
 
@@ -76,19 +119,34 @@
 					with <a href="http://www.cs.cmu.edu/~bbohrer/">Brandon
 					  Bohrer</a> and <a href="http://symbolaris.com/">Andre
 					  Platzer</a> from CMU, who have implemented and verified
-					KeYmaera's core in <a href="https://github.com/LS-Lab/Isabelle-dL">Isabelle</a>.</p>
+					KeYmaera's core in <a href="https://github.com/LS-Lab/Isabelle-dL">Isabelle</a>.
+					</p>
+
 
 					<h3>Intuitionistic and Nominal Type Theory</h3>
 
-					<p>Using our formalization of Nuprl in Coq, we are turning Nuprl into an
-					intuitionistic type theory, i.e., we have proved that some
-					versions of
-					Brouwer's <a href="articles/continuity-final.pdf">continuity</a>
-					and <a href="articles/bar-induction-lics-short.pdf">bar induction</a> principles are valid
-					w.r.t. Nuprl's PER semantics.  In order to prove the validity of such
-					continuity principles we have turned Nuprl into a nominal type theory.
-					It remains open whether stronger continuity and bar induction rules
-					are also valid.</p>
+					<p>
+					  Using our formalization of Nuprl in Coq, we are turning Nuprl into an
+					  intuitionistic type theory, i.e., we have proved that some
+					  versions of
+					  Brouwer's <a href="articles/continuity-final.pdf">continuity</a>
+					  and <a href="articles/bar-induction-lics-short.pdf">bar induction</a> principles are valid
+					  w.r.t. Nuprl's PER semantics.  In order to prove the validity of such
+					  continuity principles we have turned Nuprl into a nominal type theory.
+					  It remains open whether
+					  stronger continuity and bar
+					  induction rules are also valid.
+					  Moreover, we have also implemented a version of Brouwer's concept of
+					  <a class="apdf" href="articles/FCS-short.pdf">choice sequences</a> on top of
+					  Nuprl's underlying digital library of facts
+					  and definitions.  In addition, the library can now also contain
+					  sequences of choices that can be filled over time.  We validated
+					  standard axioms about choice sequences by turning Nuprl's semantics
+					  into a Beth model.
+					This is joint work with <a href="https://www.cs.cornell.edu/~lironcohen/">Liron Cohen</a>,
+					<a href="http://www.nuprl.org/html/PeopleErsatz/markb.html">Mark Bickford</a>,
+					    and <a href="http://www.cs.cornell.edu/home/rc/">Robert L. Constable</a>.
+					</p>
 
 					<h3>EventML</h3>
 
@@ -99,7 +157,11 @@
 					structure arguments of correctness.
 					It is designed specifically to cooperate with the Nuprl proof
 					assistant in order to develop correct-by-construction asynchronous
-					protocols.</p>
+					  protocols.
+					This is joint work with
+					<a href="http://www.nuprl.org/html/PeopleErsatz/markb.html">Mark Bickford</a>
+					    and <a href="http://www.cs.cornell.edu/home/rc/">Robert L. Constable</a>.
+					</p>
 
 					<h3>Synthesis and verification of distributed protocols</h3>
 
@@ -114,8 +176,16 @@
 					trustworthy systems.
 					One of our current goal is to verify Byzantine fault tolerant
 					protocols written in C using,
-					among other things, the <a href="http://vst.cs.princeton.edu/">Verified
-					Software Toolchain (VST)</a>.</p>
+					  among other things, the
+					  <a href="http://vst.cs.princeton.edu/">Verified Software Toolchain (VST)</a>.
+					  This is joint work with
+					  <a href="http://www.nuprl.org/html/PeopleErsatz/markb.html">Mark Bickford</a>,
+					  <a href="http://www.cs.cornell.edu/home/rc/">Robert L. Constable</a>,
+					  <a href="http://wwwen.uni.lu/snt/people/ivana_vukotic">Ivana Vukotic</a>,
+					  <a href="http://wwwen.uni.lu/snt/people/marcus_voelp">Marcus Volp</a>,
+					  and <a href="https://wwwen.uni.lu/snt/people/paulo_esteves_verissimo">Paulo Verissimo</a>
+					</p>
+
 
 					<h3>Skalpel</h3>
 
@@ -136,6 +206,7 @@
 					  a web demo.</p>
 
 					</br>
+
 
 					<header>
 						<h1>Past Projects</h1>
