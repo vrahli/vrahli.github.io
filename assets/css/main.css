@@ -4031,3 +4031,10 @@
   overflow: hidden;
   background-color: #f1f1f1;
 }
+
+.boxed {
+  border: 1px solid green ;
+}
+
+.conference {color: rgb(20, 50, 120); font-weight: 400;}
+.journal {color: rgb(199,30,50); font-weight: 400;}
