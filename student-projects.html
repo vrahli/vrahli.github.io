@@ -46,25 +46,54 @@
 
 					</br>
 
-Here's a non-exhaustive list of projects I would be interested in supervising.
+Here's a non-exhaustive list of projects I would be interested in
+supervising.  Click the titles below to expand the sections.
+
+</br></br>
+
+<button class="collapsible"><h3>Implementation and/or formalization of programming languages</h3></button>
+<div class="content">
+<p>
+
+I'm interested in projects related to implementing and/or formalizing
+programming languages.
+
+For example, distributed systems are notoriously hard to implement and
+get right. Projects related to this could be:
+<ul class="np">
+  <li> designing domain specific languages (DSL) to help implement distributed systems can help ease this task </li>
+  <li> a related project could be the formalization of such DSLs </li>
+</ul>
+
+As another example, the <a href="https://nuprl.org/">Nuprl</a> theorem
+prover is both a programming language and a framework to formally
+prove mathematical results.  It is however lacking, among other
+things, a modern interface and a compiler.  Projects related to this,
+could be to
+<ul>
+  <li> implement a modern interface for Nuprl </li>
+  <li> implement an interpreter for Nuprl </li>
+  <li> implement a compiler for Nuprl</li>
+  <li> implement extensions of Nuprl, for example with side effects</li>
+</ul>
+
+We have
+formalized <a href="https://github.com/vrahli/NuprlInCoq">Nuprl in
+Coq</a>, which is another theorem prover, and have verified some of
+its properties. Related projects can be for exampple:
+<ul>
+  <li> extend Nuprl and its formalization with new features</li>
+  <li> formalize other kinds of programming languages </li>
+</ul>
+
+</p>
+</div>
+</br></br>
 
 
-					</br></br>
-
-                                        <h3>Formalization of programming languages</h3>
-					  <p>
-
-I'm interested in projects related to formalizing programming
-languages. For example, As part of our formalization of
-<a href="https://github.com/vrahli/NuprlInCoq">Nuprl in Coq</a>, we
-have formalized Nuprl's programming language in Coq. I would, among
-other things, be interested in extending this language with new
-features, or to formalize other kinds of programming languages.
-
-					  </p>
-
-                                        <h3>Formalization of logical theories</h3>
-					  <p>
+<button class="collapsible"><h3>Formalization of logical theories</h3></button>
+<div class="content">
+<p>
 
 I'm interested in projects related to formalizing of logical
 theories. For example, As part of our formalization of
@@ -76,10 +105,14 @@ have formalized its core in Coq. I would, among other things, be
 interested in extending these theories with new features, or to
 formalize other kinds of logical systems.
 
-					  </p>
+</p>
+</div>
+</br></br>
 
-                                        <h3>Implementation of distributed systems</h3>
-					  <p>
+
+<button class="collapsible"><h3>Implementation of distributed systems</h3></button>
+<div class="content">
+<p>
 
 Fault-tolerant distributed systems such as PBFT are nowadays heavily
 used in blockchain infrastructures (see
@@ -89,40 +122,59 @@ in the literature, but that have never been fully implemented, and
 that are typically lacking important features such as state transfer
 or group membership changes. I'm interested in exploring such systems
 and extending them with features such as the ones discussed above.
+For example, one could implement
+<ul class="np">
+  <li> <a href="http://www.di.fc.ul.pt/~bessani/publications/tc11-minimal.pdf">MinBFT</a></li>
+  <li> <a href="https://vrahli.github.io/articles/AtomicRTBCast.pdf">Pistis</a></li>
+</ul>
 
-					  </p>
+</p>
+</div>
+</br></br>
 
-                                        <h3>Verification of distributed systems</h3>
-					  <p>
+<button class="collapsible"><h3>Verification of distributed systems</h3></button>
+<div class="content">
+<p>
 
 In addition to implementing these distributed system, I'm interested
 in verifying their correctness, for example using
 our  <a href="articles/asphalion.pdf">Asphalion</a> tool.
 
-					  </p>
+</p>
+</div>
+</br></br>
 
-                                        <h3>Management of distributed systems</h3>
-					  <p>
+
+<button class="collapsible"><h3>Management of distributed systems</h3></button>
+<div class="content">
+<p>
 
 In order to implement distributed systems, one typically needs to
 implement some message passing infrastructure.  I'm interested in
 building modular, configurable, and lightweight message passing
 infrastructures that make it easy to deploy distributed systems.
 
-					  </p>
+</p>
+</div>
+</br></br>
 
-                                        <h3>Blockchain systems</h3>
-					  <p>
+
+<button class="collapsible"><h3>Blockchain systems</h3></button>
+<div class="content">
+<p>
 
 Byzantine fault-tolerant systems are more and more used in blockchain
 systems.  However, they typically need to be adapted to fit the needs
 of those systems.  I'm interested in supervising projects that aim at
 designing such tailored solutions.
 
-					  </p>
+</p>
+</div>
+</br></br>
 
-				</div>
-			</section>
+
+</div>
+</section>
 
 		<!-- Scripts -->
 			<script src="assets/js/jquery.min.js"></script>

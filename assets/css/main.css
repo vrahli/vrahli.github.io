@@ -2402,6 +2402,12 @@
 			padding-left: 0.5em;
 		}
 
+	ul.np {
+		list-style: disc;
+		margin: -2em 0 2em 0;
+		padding-left: 1em;
+	}
+
 		ul.alt {
 			list-style: none;
 			padding-left: 0;
