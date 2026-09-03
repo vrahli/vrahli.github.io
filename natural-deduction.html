@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Natural Deduction Proof Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&family=Cinzel:wght@600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #1a1f2e; --bg2: #222838; --bg3: #2a3045;
+  --chalk: #e8e4d8; --chalk-dim: #a8a49a; --chalk-faint: #555060;
+  --accent: #c8a96e; --accent2: #7ec8c8;
+  --green: #7ec896; --red: #e87c7c; --yellow: #e8c87c;
+  --line: #3a4060; --node-bg: #252b3d; --node-border: #3e4868;
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--chalk);font-family:'EB Garamond',serif;font-size:16px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+#app{position:relative;z-index:1}
+
+/* HEADER */
+header{padding:18px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,rgba(30,36,54,.95) 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+header h1{font-family:'Cinzel',serif;font-size:1.25rem;letter-spacing:.05em;color:var(--accent)}
+header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--chalk-dim);letter-spacing:.1em}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.hyp-panel-toggle{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s}
+.hyp-panel-toggle:hover{color:var(--accent2);border-color:var(--accent2)}
+
+/* LAYOUT */
+#main-layout{display:flex;height:calc(100vh - 64px)}
+#canvas-area{flex:1;overflow-y:auto;overflow-x:auto;display:flex;flex-direction:column}
+#proof-canvas{flex:none;min-height:100%;padding:60px 40px 40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+#tree-container{width:100%;display:flex;flex-direction:column;align-items:center;margin-bottom:8px}
+
+/* START PANEL */
+#start-panel{display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px;max-width:560px;width:100%;margin:auto}
+#start-panel h2{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--accent);text-align:center}
+#start-panel p{color:var(--chalk-dim);font-size:.95rem;text-align:center;line-height:1.6}
+.formula-input-row{display:flex;gap:10px;width:100%}
+.formula-input{flex:1;background:var(--node-bg);border:1px solid var(--node-border);color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:1rem;padding:10px 14px;border-radius:6px;outline:none;transition:border-color .2s}
+.formula-input:focus{border-color:var(--accent)}
+.btn-primary{background:var(--accent);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.85rem;padding:10px 22px;border-radius:6px;cursor:pointer;transition:opacity .2s;letter-spacing:.04em;white-space:nowrap}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--bg3);color:var(--accent2);border:1px solid var(--accent2);font-family:'Cinzel',serif;font-size:.82rem;padding:10px 18px;border-radius:6px;cursor:pointer;transition:all .2s;letter-spacing:.04em;white-space:nowrap}
+.btn-secondary:hover{background:var(--accent2);color:var(--bg)}
+.btn-secondary:disabled{opacity:.4;cursor:not-allowed}
+
+.generate-section{width:100%;display:flex;flex-direction:column;gap:8px;align-items:center}
+.generate-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-faint);letter-spacing:.08em}
+.generate-row{display:flex;gap:10px;align-items:center;width:100%;justify-content:center}
+.gen-atoms-label{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--chalk-dim);white-space:nowrap}
+.gen-atoms-input{width:60px;background:var(--node-bg);border:1px solid var(--node-border);color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:.9rem;padding:8px 10px;border-radius:6px;outline:none;text-align:center;transition:border-color .2s}
+.gen-atoms-input:focus{border-color:var(--accent)}
+.gen-status{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--chalk-dim);min-height:1.2em;text-align:center}
+.syntax-hint{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:16px 20px;width:100%}
+.syntax-hint h3{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);letter-spacing:.1em;margin-bottom:10px}
+.syntax-hint table{width:100%;border-collapse:collapse;font-size:.88rem}
+.syntax-hint td{padding:3px 8px;color:var(--chalk-dim)}
+.syntax-hint td:first-child{font-family:'JetBrains Mono',monospace;color:var(--chalk);font-size:.82rem}
+.syntax-hint td:nth-child(2){color:var(--accent);font-size:1.1rem;text-align:center;width:40px}
+
+/* TREE */
+.tree-branch{display:flex;flex-direction:column;align-items:center}
+.branch-children{display:flex;flex-direction:row;align-items:flex-end;justify-content:center;gap:40px}
+.vertical-line{width:2px;background:var(--chalk-faint);height:36px;flex-shrink:0}
+.horizontal-line-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-width:80px}
+.horizontal-line{height:2px;background:var(--chalk-faint);width:100%;min-width:80px}
+.rule-label{position:absolute;right:calc(100% + 6px);top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--accent);white-space:nowrap;background:var(--bg);padding:2px 5px;border-radius:3px;pointer-events:none}
+
+/* NODE CARD */
+.node-card{background:var(--node-bg);border:1px solid var(--node-border);border-radius:8px;padding:14px 20px 10px 14px;min-width:140px;position:relative;transition:border-color .2s,box-shadow .2s;box-shadow:var(--shadow);width:max-content;max-width:none}
+.node-card:hover{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,169,110,.15)}
+.node-card.node-ok  {border-color:rgba(126,200,150,.5)}
+.node-card.node-warn{border-color:rgba(200,169,110,.4)}
+.node-card.node-err {border-color:rgba(232,124,124,.5)}
+.node-card.node-root{border-color:var(--accent);background:rgba(200,169,110,.06)}
+.node-card.node-open{border-style:dashed;border-color:var(--chalk-faint)}
+.node-formula-display{font-family:'JetBrains Mono',monospace;font-size:1.05rem;color:var(--chalk);text-align:center;letter-spacing:.02em;min-height:24px;cursor:pointer;white-space:nowrap}
+.node-formula-display:hover{color:var(--accent2)}
+.node-formula-input{min-width:160px;width:100%;background:transparent;border:none;border-bottom:1px solid var(--chalk-faint);color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:1rem;text-align:center;outline:none;padding:2px 4px;transition:border-color .2s;white-space:nowrap}
+.node-formula-input:focus{border-color:var(--accent2)}
+.node-formula-input::placeholder{color:var(--chalk-faint);font-size:.8rem}
+.node-status-dot{width:9px;height:9px;border-radius:50%;position:absolute;top:9px;right:10px;cursor:help;flex-shrink:0}
+.dot-ok     {background:var(--green);  box-shadow:0 0 6px var(--green)}
+.dot-warn   {background:var(--yellow); box-shadow:0 0 6px var(--yellow)}
+.dot-err    {background:var(--red);    box-shadow:0 0 6px var(--red)}
+.dot-pending{background:var(--chalk-faint)}
+.node-actions{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.rule-select{width:100%;background:var(--bg3);border:1px solid var(--line);color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:5px 24px 5px 8px;border-radius:4px;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.rule-select:focus{border-color:var(--accent)}
+.rule-select option{background:var(--bg2)}
+.apply-rule-btn{width:100%;background:var(--bg3);border:1px solid var(--node-border);color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:5px;border-radius:4px;cursor:pointer;transition:all .15s;letter-spacing:.05em;margin-top:4px}
+.apply-rule-btn:hover{background:var(--accent2);color:var(--bg)}
+.apply-rule-btn.change-btn{color:var(--accent)}
+.apply-rule-btn.change-btn:hover{background:var(--accent);color:var(--bg)}
+.hint-btn{width:100%;background:none;border:1px dashed var(--chalk-faint);color:var(--chalk-faint);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:4px 8px;border-radius:4px;cursor:pointer;margin-top:5px;transition:all .15s}
+.hint-btn:hover{border-color:var(--accent2);color:var(--accent2)}
+.node-section{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.node-section-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--chalk-faint);letter-spacing:.1em;margin-bottom:5px}
+.node-hyp-row{display:flex;gap:6px;align-items:center}
+.node-hyp-row label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-dim);white-space:nowrap}
+.node-num-input{width:48px;background:transparent;border:none;border-bottom:1px solid var(--chalk-faint);color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:.8rem;text-align:center;outline:none;flex-shrink:0}
+.node-num-input:focus{border-color:var(--accent2)}
+
+/* HYPOTHESIS PANEL */
+#hyp-panel{width:260px;background:var(--bg2);border-left:1px solid var(--line);padding:20px 16px;overflow-y:auto;flex-shrink:0;transition:width .3s,opacity .3s}
+#hyp-panel.hidden{width:0;padding:0;opacity:0;overflow:hidden}
+#hyp-panel h2{font-family:'Cinzel',serif;font-size:.9rem;color:var(--accent);letter-spacing:.06em;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.hyp-item{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.hyp-num{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);min-width:20px;font-weight:600}
+.hyp-formula{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--chalk)}
+.hyp-cancelled{text-decoration:line-through;color:var(--chalk-faint)}
+.hyp-empty{color:var(--chalk-faint);font-size:.85rem;font-style:italic;text-align:center;margin-top:20px}
+
+/* FEEDBACK */
+#feedback-panel{position:fixed;bottom:24px;right:24px;width:340px;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:16px 18px;box-shadow:var(--shadow);z-index:200;transform:translateY(120%);transition:transform .3s cubic-bezier(.34,1.56,.64,1);font-size:.9rem;line-height:1.55}
+#feedback-panel.visible{transform:translateY(0)}
+.fb-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.fb-icon{font-size:1.1rem}
+.fb-title{font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:.06em}
+.fb-title.ok{color:var(--green)}.fb-title.err{color:var(--red)}.fb-title.info{color:var(--accent2)}
+.fb-body{color:var(--chalk-dim);font-size:.87rem}
+.fb-body code{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--chalk);background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px}
+.fb-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-size:1rem}
+.fb-close:hover{color:var(--chalk)}
+
+.reset-btn{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:none;border:1px solid var(--line);color:var(--chalk-faint);padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .2s}
+.reset-btn:hover{color:var(--red);border-color:var(--red)}
+
+.legend{display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint)}
+.legend-item{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--chalk-faint);border-radius:3px}
+
+/* FIREWORKS */
+#fireworks-canvas{position:fixed;inset:0;pointer-events:none;z-index:999}
+
+/* COMPLETION PANEL */
+#completion-panel{
+  position:fixed;bottom:24px;right:24px;width:360px;
+  background:linear-gradient(135deg,#1e2a1e 0%,#1a2535 100%);
+  border:1px solid var(--green);border-radius:12px;
+  padding:22px 22px 18px;box-shadow:0 0 32px rgba(126,200,150,0.25),var(--shadow);
+  z-index:300;transform:translateY(120%);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1);
+}
+#completion-panel.visible{transform:translateY(0)}
+.completion-title{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--green);
+  letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.completion-body{color:var(--chalk-dim);font-size:.9rem;line-height:1.55;margin-bottom:16px}
+.completion-body strong{color:var(--chalk)}
+.btn-try-another{width:100%;background:var(--green);color:var(--bg);border:none;
+  font-family:'Cinzel',serif;font-size:.85rem;padding:10px;border-radius:6px;
+  cursor:pointer;transition:opacity .2s;letter-spacing:.05em}
+.btn-try-another:hover{opacity:.85}
+
+/* TIMER */
+.timer-display{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--accent2);
+  letter-spacing:.1em;min-width:60px;text-align:center;display:none}
+.timer-display.active{display:block}
+
+/* HISTORY BUTTON */
+.history-btn{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:none;
+  border:1px solid var(--line);color:var(--chalk-faint);padding:5px 12px;
+  border-radius:4px;cursor:pointer;transition:all .2s}
+.history-btn:hover{color:var(--accent2);border-color:var(--accent2)}
+
+/* HISTORY MODAL */
+#history-modal{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center}
+#history-modal.open{display:flex}
+.history-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+.history-box{position:relative;background:var(--bg2);border:1px solid var(--node-border);
+  border-radius:12px;padding:28px 28px 24px;width:min(560px,90vw);max-height:70vh;
+  display:flex;flex-direction:column;box-shadow:var(--shadow);z-index:1}
+.history-box h2{font-family:'Cinzel',serif;font-size:1rem;color:var(--accent);
+  letter-spacing:.06em;margin-bottom:18px;flex-shrink:0}
+.history-close{position:absolute;top:14px;right:16px;background:none;border:none;
+  color:var(--chalk-faint);cursor:pointer;font-size:1.1rem}
+.history-close:hover{color:var(--chalk)}
+.history-list{overflow-y:auto;flex:1}
+.history-empty{color:var(--chalk-faint);font-style:italic;font-size:.9rem;text-align:center;margin-top:16px}
+.history-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;
+  gap:16px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.history-row:last-child{border-bottom:none}
+.history-index{font-family:'JetBrains Mono',monospace;font-size:.65rem;
+  color:var(--chalk-faint);flex-shrink:0}
+.history-formula{font-family:'JetBrains Mono',monospace;font-size:.88rem;
+  color:var(--chalk);word-break:break-all}
+.history-time{font-family:'JetBrains Mono',monospace;font-size:.82rem;
+  color:var(--accent2);white-space:nowrap;text-align:right}
+.history-clear{margin-top:16px;width:100%;background:none;border:1px solid var(--line);
+  color:var(--chalk-faint);font-family:'JetBrains Mono',monospace;font-size:.68rem;
+  padding:6px;border-radius:4px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.history-clear:hover{color:var(--red);border-color:var(--red)}
+
+/* NAME INPUT */
+.name-input-row{display:flex;align-items:center;gap:10px;width:100%}
+.name-label{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--chalk-dim);white-space:nowrap}
+.name-input{flex:1;background:var(--node-bg);border:1px solid var(--node-border);color:var(--chalk);font-family:'EB Garamond',serif;font-size:1rem;padding:8px 12px;border-radius:6px;outline:none;transition:border-color .2s}
+.name-input:focus{border-color:var(--accent)}
+.name-input::placeholder{color:var(--chalk-faint)}
+.name-error{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--red);min-height:1.2em;text-align:center}
+
+/* SCORE */
+.score-display{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--accent);text-align:center;margin:8px 0;letter-spacing:.05em}
+.score-breakdown{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--chalk-faint);text-align:center;margin-bottom:10px}
+.submit-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.btn-submit-score{flex:1;background:var(--accent2);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.8rem;padding:8px;border-radius:5px;cursor:pointer;transition:opacity .2s;letter-spacing:.04em}
+.btn-submit-score:hover{opacity:.85}
+.btn-submit-score:disabled{opacity:.4;cursor:not-allowed}
+.submit-status{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-dim)}
+
+/* LEADERBOARD MODAL */
+#leaderboard-modal{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center}
+#leaderboard-modal.open{display:flex}
+.lb-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint);margin-bottom:14px;line-height:1.5}
+.lb-row{display:grid;grid-template-columns:28px 1fr auto auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.lb-row:last-child{border-bottom:none}
+.lb-row.lb-header{border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px}
+.lb-rank{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--chalk-faint);text-align:center}
+.lb-rank.gold{color:#ffd700;font-weight:700}
+.lb-rank.silver{color:#c0c0c0;font-weight:700}
+.lb-rank.bronze{color:#cd7f32;font-weight:700}
+.lb-name{font-family:'EB Garamond',serif;font-size:.95rem;color:var(--chalk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-formula{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent);white-space:nowrap;text-align:right;font-weight:700}
+.lb-time{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--chalk-faint);white-space:nowrap;text-align:right}
+.lb-empty{color:var(--chalk-faint);font-style:italic;font-size:.9rem;text-align:center;margin-top:16px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div>
+      <h1>Natural Deduction</h1>
+      <div class="subtitle">PROPOSITIONAL LOGIC PROOF BUILDER</div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--chalk-faint)"></div>empty</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);box-shadow:0 0 4px var(--yellow)"></div>filled</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green);box-shadow:0 0 4px var(--green)"></div>proved</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red);box-shadow:0 0 4px var(--red)"></div>error</div>
+    </div>
+    <div class="header-right">
+      <div class="timer-display" id="timerDisplay">0:00</div>
+      <button class="history-btn" id="historyBtn">⏱ History</button>
+      <button class="history-btn" id="leaderboardBtn">🏆 Leaderboard</button>
+      <button class="reset-btn" id="resetBtn" style="display:none">↺ New Proof</button>
+      <button class="hyp-panel-toggle" id="hypToggle">Hypotheses ▶</button>
+    </div>
+  </header>
+  <div id="main-layout">
+    <div id="canvas-area">
+      <div id="proof-canvas">
+        <div id="start-panel">
+          <h2>Begin Your Proof</h2>
+          <div class="name-input-row">
+            <label class="name-label" for="studentName">Your name:</label>
+            <input class="name-input" id="studentName" type="text" placeholder="Enter your name…" maxlength="30" autocomplete="off" spellcheck="false"/>
+          </div>
+          <div id="nameError" class="name-error"></div>
+          <p>Enter the formula you wish to prove. The tree grows upward from this root.</p>
+          <div class="formula-input-row">
+            <input class="formula-input" id="rootInput" placeholder="e.g.  A \to B  or  (A \and B) \to A" autocomplete="off" spellcheck="false"/>
+            <button class="btn-primary" id="startBtn">Prove</button>
+          </div>
+          <div id="rootPreview" style="font-family:'JetBrains Mono',monospace;font-size:1.15rem;color:var(--accent);min-height:1.6em;text-align:center;padding:4px 0;letter-spacing:.02em"></div>
+          <div class="generate-section">
+            <div class="generate-label">— or generate a provable formula —</div>
+            <div class="generate-row">
+              <label class="gen-atoms-label" for="genAtoms">Atoms (1–5):</label>
+              <input id="genAtoms" type="number" min="1" max="5" value="2" class="gen-atoms-input"/>
+              <button class="btn-secondary" id="generateBtn">⚄ Generate</button>
+            </div>
+            <div id="genStatus" class="gen-status"></div>
+          </div>
+          <div class="syntax-hint">
+            <h3>SYNTAX GUIDE</h3>
+            <table>
+              <tr><td>/\  or  \and</td><td>∧</td><td>conjunction</td></tr>
+              <tr><td>\/  or  \or</td><td>∨</td><td>disjunction</td></tr>
+              <tr><td>->  or  \to</td><td>→</td><td>implication</td></tr>
+              <tr><td>~  or  \neg</td><td>¬</td><td>negation</td></tr>
+              <tr><td>_|_  or  \bot</td><td>⊥</td><td>falsum</td></tr>
+              <tr><td>( )</td><td></td><td>grouping</td></tr>
+            </table>
+          </div>
+        </div>
+        <div id="tree-container" style="display:none"></div>
+      </div>
+    </div>
+    <div id="hyp-panel" class="hidden">
+      <h2>Hypotheses</h2>
+      <div id="hyp-list"></div>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:10px 20px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--chalk-faint);border-top:1px solid var(--line);position:relative;z-index:1">
+  Built with <a href="https://claude.ai" target="_blank" style="color:var(--chalk-faint);text-decoration:underline">Claude</a> (Anthropic) &nbsp;·&nbsp;
+  <a href="https://github.com/vrahli/vrahli.github.io" target="_blank" style="color:var(--chalk-faint);text-decoration:underline">Source on GitHub</a>
+</footer>
+
+<canvas id="fireworks-canvas"></canvas>
+
+<div id="completion-panel">
+  <div class="completion-title">🎉 Proof Complete!</div>
+  <div class="completion-body" id="completion-body"></div>
+  <div id="score-display" class="score-display"></div>
+  <div id="submit-row" class="submit-row" style="display:none">
+    <button class="btn-submit-score" id="submitScoreBtn">Submit to Leaderboard</button>
+    <span id="submit-status" class="submit-status"></span>
+  </div>
+  <button class="btn-try-another" id="tryAnotherBtn">↺ Try Another Proof</button>
+</div>
+
+<div id="history-modal">
+  <div class="history-backdrop" id="historyBackdrop"></div>
+  <div class="history-box">
+    <button class="history-close" id="historyClose">✕</button>
+    <h2>Proof History</h2>
+    <div class="history-list" id="historyList"></div>
+    <button class="history-clear" id="historyClear">Clear history</button>
+  </div>
+</div>
+
+<div id="leaderboard-modal">
+  <div class="history-backdrop" id="lbBackdrop"></div>
+  <div class="history-box">
+    <button class="history-close" id="lbClose">✕</button>
+    <h2>🏆 Leaderboard</h2>
+    <div class="lb-meta">Top scores across all students. Score = connectives × 100 − seconds × 2.</div>
+    <div class="history-list" id="lbList"></div>
+    <button class="history-clear" id="lbRefresh">↺ Refresh</button>
+  </div>
+</div>
+
+<div id="feedback-panel">
+  <button class="fb-close" id="fbClose">✕</button>
+  <div id="feedback-content" style="display:none">
+    <div class="fb-header"><span class="fb-icon" id="fbIcon"></span><span class="fb-title" id="fbTitle"></span></div>
+    <div class="fb-body" id="fbBody"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  PARSER
+// ═══════════════════════════════════════════
+
+function preprocess(s) {
+  s = s.replace(/\\to\b/g,   '->');
+  s = s.replace(/\\and\b/g,  '/\\');
+  s = s.replace(/\\land\b/g, '/\\');
+  s = s.replace(/\\or\b/g,   '\\/');
+  s = s.replace(/\\lor\b/g,  '\\/');
+  s = s.replace(/\\neg\b/g,  '~');
+  s = s.replace(/\\lneg\b/g, '~');
+  s = s.replace(/\\bot\b/g,  '_|_');
+  s = s.replace(/∧/g, '/\\');
+  s = s.replace(/∨/g, '\\/');
+  s = s.replace(/→/g, '->');
+  s = s.replace(/¬/g, '~');
+  s = s.replace(/⊥/g, '_|_');
+  return s;
+}
+
+// Live-render LaTeX shortcuts into Unicode as the user types.
+// Triggered on the 'input' event; only replaces a sequence once it is
+// "complete" — i.e. followed by a space, operator character, paren, or end-of-string.
+function applyLiveReplacements(s) {
+  // Order matters: longer sequences first so \land doesn't match as \l + and
+  const rules = [
+    [/\\land(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '∧'],
+    [/\\lneg(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '¬'],
+    [/\\lor(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '∨'],
+    [/\\and(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '∧'],
+    [/\\neg(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g, '¬'],
+    [/\\bot(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '⊥'],
+    [/\\to(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g,  '→'],
+    [/\\or(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g,  '∨'],
+    // Also fire when the user presses space right after the keyword
+    [/\\land\s/g, '∧ '], [/\\lneg\s/g, '¬'],
+    [/\\lor\s/g,  '∨ '], [/\\and\s/g,  '∧ '],
+    [/\\neg\s/g,  '¬'],  [/\\bot\s/g,  '⊥ '],
+    [/\\to\s/g,   '→ '], [/\\or\s/g,   '∨ '],
+  ];
+  let out = s;
+  for (const [re, sub] of rules) out = out.replace(re, sub);
+  return out;
+}
+
+// Attach live Unicode replacement to any <input> element
+function attachLiveRender(inp) {
+  inp.addEventListener('input', () => {
+    const pos    = inp.selectionStart;
+    const before = inp.value;
+    const after  = applyLiveReplacements(before);
+    if (after !== before) {
+      const delta = after.length - before.length;
+      inp.value   = after;
+      const np    = Math.max(0, pos + delta);
+      inp.setSelectionRange(np, np);
+    }
+  });
+}
+
+function tokenise(s) {
+  s = preprocess(s.trim());
+  const tokens = [];
+  let i = 0;
+  while (i < s.length) {
+    if (/\s/.test(s[i]))             { i++; continue; }
+    if (s[i] === '(')                { tokens.push({t:'LPAREN'}); i++; }
+    else if (s[i] === ')')           { tokens.push({t:'RPAREN'}); i++; }
+    else if (s.slice(i,i+2)==='/\\') { tokens.push({t:'AND'}); i+=2; }
+    else if (s.slice(i,i+2)==='\\/'){ tokens.push({t:'OR'});  i+=2; }
+    else if (s.slice(i,i+2)==='->') { tokens.push({t:'IMP'}); i+=2; }
+    else if (s[i]==='~')             { tokens.push({t:'NEG'}); i++; }
+    else if (s.slice(i,i+3)==='_|_'){ tokens.push({t:'BOT'}); i+=3; }
+    else if (/[A-Za-z_]/.test(s[i])) {
+      let name='';
+      while (i<s.length && /[A-Za-z0-9_']/.test(s[i])) name+=s[i++];
+      tokens.push({t:'ATOM',v:name});
+    } else { i++; }
+  }
+  return tokens;
+}
+
+// Precedence: NEG > AND > OR > IMP (right-assoc)
+function parse(tokens) {
+  let pos = 0;
+  const peek    = () => tokens[pos];
+  const consume = () => tokens[pos++];
+  const expect  = t => { if (peek()?.t!==t) throw new Error('Expected '+t); return consume(); };
+
+  function parseImp() {
+    let left = parseOr();
+    if (peek()?.t==='IMP') { consume(); return {op:'IMP',left,right:parseImp()}; }
+    return left;
+  }
+  function parseOr() {
+    let left = parseAnd();
+    while (peek()?.t==='OR') { consume(); left={op:'OR',left,right:parseAnd()}; }
+    return left;
+  }
+  function parseAnd() {
+    let left = parseNeg();
+    while (peek()?.t==='AND') { consume(); left={op:'AND',left,right:parseNeg()}; }
+    return left;
+  }
+  function parseNeg() {
+    if (peek()?.t==='NEG') { consume(); return {op:'NEG',sub:parseNeg()}; }
+    return parseAtom();
+  }
+  function parseAtom() {
+    const tk = peek();
+    if (!tk) throw new Error('Unexpected end');
+    if (tk.t==='BOT')    { consume(); return {op:'BOT'}; }
+    if (tk.t==='ATOM')   { consume(); return {op:'ATOM',v:tk.v}; }
+    if (tk.t==='LPAREN') { consume(); const e=parseImp(); expect('RPAREN'); return e; }
+    throw new Error('Unexpected token: '+tk.t);
+  }
+  const result = parseImp();
+  if (pos < tokens.length) throw new Error('Extra tokens');
+  return result;
+}
+
+function tryParse(s) {
+  if (!s||!s.trim()) return null;
+  try { return parse(tokenise(s)); } catch(e) { return null; }
+}
+
+const SYM = {AND:'∧',OR:'∨',IMP:'→',NEG:'¬',BOT:'⊥'};
+
+function fmtAST(ast) {
+  if (!ast) return '?';
+  switch(ast.op) {
+    case 'ATOM': return ast.v;
+    case 'BOT':  return '⊥';
+    case 'NEG': {
+      const inner = fmtAST(ast.sub);
+      return SYM.NEG + (['AND','OR','IMP'].includes(ast.sub.op) ? `(${inner})` : inner);
+    }
+    case 'AND': return `${par(ast.left,['IMP','OR'])} ${SYM.AND} ${par(ast.right,['IMP','OR'])}`;
+    case 'OR':  return `${par(ast.left,['IMP'])} ${SYM.OR} ${par(ast.right,['IMP'])}`;
+    case 'IMP': return `${par(ast.left,['IMP'])} ${SYM.IMP} ${fmtAST(ast.right)}`;
+    default: return '?';
+  }
+}
+function par(ast,ops) { const s=fmtAST(ast); return ops.includes(ast.op)?`(${s})`:s; }
+
+function renderFormula(s) { const a=tryParse(s); return a?fmtAST(a):s; }
+
+function astEqual(a,b) {
+  if (!a||!b||a.op!==b.op) return false;
+  if (a.op==='ATOM') return a.v===b.v;
+  if (a.op==='BOT')  return true;
+  if (a.op==='NEG')  return astEqual(a.sub,b.sub);
+  return astEqual(a.left,b.left)&&astEqual(a.right,b.right);
+}
+
+// ═══════════════════════════════════════════
+//  RULES
+// ═══════════════════════════════════════════
+
+const RULES = [
+  {id:'imp-i',  label:'→-introduction',        symbol:'→I',  premises:1, genHyp:true },
+  {id:'and-i',  label:'∧-introduction',        symbol:'∧I',  premises:2, genHyp:false},
+  {id:'or-i-l', label:'∨-introduction (left)', symbol:'∨I₁', premises:1, genHyp:false},
+  {id:'or-i-r', label:'∨-introduction (right)',symbol:'∨I₂', premises:1, genHyp:false},
+  {id:'neg-i',  label:'¬-introduction',        symbol:'¬I',  premises:1, genHyp:true },
+  {id:'imp-e',  label:'→-elimination (MP)',    symbol:'→E',  premises:2, genHyp:false},
+  {id:'and-e-l',label:'∧-elimination (left)',  symbol:'∧E₁', premises:1, genHyp:false},
+  {id:'and-e-r',label:'∧-elimination (right)', symbol:'∧E₂', premises:1, genHyp:false},
+  {id:'or-e',   label:'∨-elimination',         symbol:'∨E',  premises:3, genHyp:false},
+  {id:'neg-e',  label:'¬-elimination (⊥)',     symbol:'¬E',  premises:2, genHyp:false},
+  {id:'bot-e',  label:'⊥-elimination (EFQ)',   symbol:'⊥E',  premises:1, genHyp:false},
+  {id:'lem',    label:'LEM (Law of Excl. Middle)',symbol:'LEM', premises:0, genHyp:false},
+  {id:'cancel', label:'Cancel hypothesis',     symbol:'[n]', premises:0, genHyp:false},
+];
+const ruleById = id => RULES.find(r=>r.id===id);
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+
+let proofTree = null;
+let hypotheses = {};      // n -> {formula, cancelled}
+let nextHypNum = 1;
+let nodeIdCounter = 0;
+
+// Timer & history
+let proofStartTime  = null;
+let timerInterval   = null;
+let proofHistory    = [];
+let currentStudentName = '';
+
+function newNode(formula) {
+  return {
+    id:nodeIdCounter++, formula:formula||'', rule:null, children:[],
+    status:null, hypNum:null, hypFormula:null, cancelNum:null,
+    isOpen:!formula, isHypLeaf:false
+  };
+}
+
+// ═══════════════════════════════════════════
+//  FEEDBACK
+// ═══════════════════════════════════════════
+
+function showFeedback(type,title,body) {
+  document.getElementById('feedback-content').style.display='block';
+  document.getElementById('fbIcon').textContent  = {ok:'✓',err:'✗',info:'ℹ'}[type]||'ℹ';
+  document.getElementById('fbTitle').textContent = title;
+  document.getElementById('fbTitle').className   = 'fb-title '+type;
+  document.getElementById('fbBody').innerHTML    = body.replace(/`([^`]+)`/g,'<code>$1</code>');
+  document.getElementById('feedback-panel').classList.add('visible');
+}
+function hideFeedback() { document.getElementById('feedback-panel').classList.remove('visible'); }
+
+// ═══════════════════════════════════════════
+//  RULE CHECKS
+// ═══════════════════════════════════════════
+
+function opName(op) {
+  return ({IMP:'implication',AND:'conjunction',OR:'disjunction',NEG:'negation',BOT:'falsum (⊥)',ATOM:'atom'})[op]||op;
+}
+
+function checkRuleApplicability(formulaStr, ruleId) {
+  const ast = tryParse(formulaStr);
+  if (!ast) return {valid:false, reason:'The formula could not be parsed.'};
+  const f = fmtAST(ast);
+  switch(ruleId) {
+    case 'imp-i':
+      if (ast.op!=='IMP') return {valid:false, reason:`→I can only prove an implication A → B. Your formula ${f} is a ${opName(ast.op)}, not an implication. For example, →I applies to P → Q but not to ${f}.`};
+      return {valid:true, reason:`→I is correct. Assume the antecedent as a labelled hypothesis and prove the consequent ${fmtAST(ast.right)}.`};
+    case 'and-i':
+      if (ast.op!=='AND') return {valid:false, reason:`∧I can only prove a conjunction A ∧ B. Your formula ${f} is a ${opName(ast.op)}, not a conjunction. ∧I applies to P ∧ Q but not to ${f}.`};
+      return {valid:true, reason:`∧I is right. Prove ${fmtAST(ast.left)} in one branch and ${fmtAST(ast.right)} in the other.`};
+    case 'or-i-l':
+      if (ast.op!=='OR') return {valid:false, reason:`∨I₁ can only prove a disjunction A ∨ B. Your formula ${f} is a ${opName(ast.op)}, not a disjunction.`};
+      return {valid:true, reason:`∨I₁ works. Prove the left disjunct ${fmtAST(ast.left)}.`};
+    case 'or-i-r':
+      if (ast.op!=='OR') return {valid:false, reason:`∨I₂ can only prove a disjunction A ∨ B. Your formula ${f} is a ${opName(ast.op)}, not a disjunction.`};
+      return {valid:true, reason:`∨I₂ works. Prove the right disjunct ${fmtAST(ast.right)}.`};
+    case 'neg-i':
+      if (ast.op!=='NEG') return {valid:false, reason:`¬I can only prove a negation ¬A. Your formula ${f} is a ${opName(ast.op)}, not a negation.`};
+      return {valid:true, reason:`¬I is right. Assume ${fmtAST(ast.sub)} as a hypothesis, derive ⊥, and you get ¬${fmtAST(ast.sub)}.`};
+    case 'imp-e':
+      return {valid:true, reason:`→E (modus ponens) is valid. Provide A → ${f} as premise 1 and A as premise 2.`};
+    case 'and-e-l':
+      return {valid:true, reason:`∧E₁ extracts the left conjunct. Provide a conjunction whose left side is ${f}.`};
+    case 'and-e-r':
+      return {valid:true, reason:`∧E₂ extracts the right conjunct. Provide a conjunction whose right side is ${f}.`};
+    case 'or-e':
+      return {valid:true, reason:`∨E (proof by cases) is valid. Provide A ∨ B, then proofs of ${f} from A and from B separately.`};
+    case 'neg-e':
+      if (ast.op!=='BOT') return {valid:false, reason:`¬E derives ⊥ from ¬A and A. Your formula is ${f}, not ⊥. Use ¬E only when the goal is to derive a contradiction ⊥.`};
+      return {valid:true, reason:`¬E is right — provide ¬A and A as premises to derive ⊥.`};
+    case 'bot-e':
+      return {valid:true, reason:`⊥E (ex falso) lets you derive any formula from ⊥. Provide a proof of ⊥.`};
+    case 'lem': {
+      // Valid iff the formula is A ∨ ¬A or ¬A ∨ A for some A
+      if (ast.op !== 'OR')
+        return {valid:false, reason:`LEM can only be applied when the formula is of the form A ∨ ¬A (or ¬A ∨ A). Your formula ${f} is a ${opName(ast.op)}, not a disjunction of a formula and its negation.`};
+      const leftIsNegOfRight = ast.left.op==='NEG' && astEqual(ast.left.sub, ast.right);
+      const rightIsNegOfLeft = ast.right.op==='NEG' && astEqual(ast.right.sub, ast.left);
+      if (!leftIsNegOfRight && !rightIsNegOfLeft)
+        return {valid:false, reason:`LEM requires the formula to be A ∨ ¬A — one disjunct must be exactly the negation of the other. Your formula is ${f}, but ${fmtAST(ast.left)} and ${fmtAST(ast.right)} are not a formula/negation pair.`};
+      return {valid:true, reason:`LEM is exactly right here. ${f} is an instance of the law of excluded middle and needs no premises — it is a classical axiom.`};
+    }
+    case 'cancel':
+      return {valid:true, reason:`Enter the hypothesis number to cancel. The formula here must match the hypothesis exactly.`};
+    default:
+      return {valid:false, reason:`Unknown rule: ${ruleId}`};
+  }
+}
+
+function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex) {
+  const parent = tryParse(parentStr);
+  const child  = tryParse(childStr);
+  if (!parent) return {valid:false, reason:'Parent formula could not be parsed.'};
+  if (!child)  return {valid:false, reason:'Premise formula could not be parsed.'};
+  const pf=fmtAST(parent), cf=fmtAST(child);
+
+  switch(ruleId) {
+    case 'imp-i':
+      if (premiseIndex===0 && parent.op==='IMP') {
+        if (!astEqual(child,parent.right)) return {valid:false, reason:`→I for ${pf}: the premise must be the consequent ${fmtAST(parent.right)}. You wrote ${cf}. The antecedent ${fmtAST(parent.left)} is only a hypothesis, not a premise to prove.`};
+        return {valid:true, reason:`Correct — ${cf} is the consequent of ${pf}.`};
+      }
+      return {valid:true, reason:''};
+    case 'and-i': {
+      if (parent.op!=='AND') return {valid:false, reason:`∧I cannot apply: ${pf} is not a conjunction.`};
+      const expected = premiseIndex===0 ? parent.left : parent.right;
+      const label    = premiseIndex===0 ? 'left' : 'right';
+      if (!astEqual(child,expected)) return {valid:false, reason:`∧I for ${pf}: premise ${premiseIndex+1} must be the ${label} conjunct ${fmtAST(expected)}. You wrote ${cf}. Left branch → ${fmtAST(parent.left)}, right branch → ${fmtAST(parent.right)}.`};
+      return {valid:true, reason:`Correct — ${cf} is the ${label} conjunct of ${pf}.`};
+    }
+    case 'or-i-l':
+      if (parent.op!=='OR') return {valid:false, reason:`∨I₁ cannot apply: ${pf} is not a disjunction.`};
+      if (!astEqual(child,parent.left)) return {valid:false, reason:`∨I₁ for ${pf}: the premise must be the left disjunct ${fmtAST(parent.left)}. You wrote ${cf}.`};
+      return {valid:true, reason:`Correct — ${cf} is the left disjunct of ${pf}.`};
+    case 'or-i-r':
+      if (parent.op!=='OR') return {valid:false, reason:`∨I₂ cannot apply: ${pf} is not a disjunction.`};
+      if (!astEqual(child,parent.right)) return {valid:false, reason:`∨I₂ for ${pf}: the premise must be the right disjunct ${fmtAST(parent.right)}. You wrote ${cf}.`};
+      return {valid:true, reason:`Correct — ${cf} is the right disjunct of ${pf}.`};
+    case 'neg-i':
+      if (premiseIndex===0) {
+        if (child.op!=='BOT') return {valid:false, reason:`¬I needs ⊥ as its premise. You wrote ${cf}. Under your hypothesis you must derive ⊥ (a contradiction).`};
+        return {valid:true, reason:`Correct — ⊥ is exactly what ¬I needs.`};
+      }
+      return {valid:true, reason:''};
+    case 'and-e-l':
+      if (child.op!=='AND') return {valid:false, reason:`∧E₁ needs a conjunction as premise. You wrote ${cf} (a ${opName(child.op)}). It must be of the form ${pf} ∧ ?.`};
+      if (!astEqual(parent,child.left)) return {valid:false, reason:`∧E₁: the premise's left conjunct must be ${pf}. Your premise ${cf} has left side ${fmtAST(child.left)}.`};
+      return {valid:true, reason:`Correct — ${cf} is a conjunction with left conjunct ${pf}.`};
+    case 'and-e-r':
+      if (child.op!=='AND') return {valid:false, reason:`∧E₂ needs a conjunction as premise. You wrote ${cf} (a ${opName(child.op)}). It must be of the form ? ∧ ${pf}.`};
+      if (!astEqual(parent,child.right)) return {valid:false, reason:`∧E₂: the premise's right conjunct must be ${pf}. Your premise ${cf} has right side ${fmtAST(child.right)}.`};
+      return {valid:true, reason:`Correct — ${cf} is a conjunction with right conjunct ${pf}.`};
+    case 'bot-e':
+      if (child.op!=='BOT') return {valid:false, reason:`⊥E needs ⊥ as its premise. You wrote ${cf}. Provide a proof of ⊥.`};
+      return {valid:true, reason:`Correct — ⊥ is what ⊥E needs.`};
+    case 'neg-e':
+      if (premiseIndex===0) {
+        if (child.op!=='NEG') return {valid:false, reason:`¬E: premise 1 must be a negation ¬A. You wrote ${cf}. Provide ¬A first, then A.`};
+        return {valid:true, reason:`Good — ${cf} is a negation, correct as the first premise of ¬E.`};
+      }
+      return {valid:true, reason:`Make sure this matches the formula negated in premise 1.`};
+    case 'imp-e':
+      if (premiseIndex===0) {
+        if (child.op!=='IMP') return {valid:false, reason:`→E: premise 1 must be an implication A → ${pf}. You wrote ${cf} (a ${opName(child.op)}).`};
+        if (!astEqual(parent,child.right)) return {valid:false, reason:`→E: premise 1 must have ${pf} as its consequent. Your premise ${cf} has consequent ${fmtAST(child.right)}.`};
+        return {valid:true, reason:`Correct — ${cf} is an implication with consequent ${pf}.`};
+      }
+      return {valid:true, reason:`This should be the antecedent matching premise 1.`};
+    default:
+      return {valid:true, reason:''};
+  }
+}
+
+function feedbackForRule(node, ruleId) {
+  const check = checkRuleApplicability(node.formula, ruleId);
+  if (!check.valid) { showFeedback('err','Rule not applicable',check.reason); return false; }
+  showFeedback('ok','Good Step',check.reason);
+  return true;
+}
+
+function feedbackForPremise(parentNode, childNode, ruleId, premiseIndex) {
+  const check = checkPremiseValidity(parentNode.formula, ruleId, childNode.formula, premiseIndex);
+  if (!check.valid) { showFeedback('err','Incorrect Premise',check.reason); return false; }
+  if (check.reason) showFeedback('ok','Correct Premise',check.reason);
+  return true;
+}
+
+// ═══════════════════════════════════════════
+//  HINT COMPUTATION
+// ═══════════════════════════════════════════
+
+function computeHint(parent, idx) {
+  const ast = tryParse(parent.formula);
+  if (!ast) return null;
+  const f = fmtAST(ast);
+  switch(parent.rule) {
+    case 'imp-i':   return (idx===0 && ast.op==='IMP') ? fmtAST(ast.right) : null;
+    case 'and-i':   return ast.op==='AND' ? (idx===0 ? fmtAST(ast.left) : fmtAST(ast.right)) : null;
+    case 'or-i-l':  return ast.op==='OR'  ? fmtAST(ast.left)  : null;
+    case 'or-i-r':  return ast.op==='OR'  ? fmtAST(ast.right) : null;
+    case 'neg-i':   return idx===0 ? '⊥' : null;
+    case 'imp-e':   return idx===0 ? `? → ${f}` : `? (the antecedent matching premise 1)`;
+    case 'and-e-l': return `${f} ∧ ?`;
+    case 'and-e-r': return `? ∧ ${f}`;
+    case 'or-e':    return idx===0 ? '? ∨ ?' : `? → ${f}`;
+    case 'neg-e':   return idx===0 ? '¬?' : '? (formula negated in premise 1)';
+    case 'bot-e':   return '⊥';
+    default: return null;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  TREE RENDERING
+// ═══════════════════════════════════════════
+
+function renderTree() {
+  const container = document.getElementById('tree-container');
+  container.innerHTML = '';
+  if (!proofTree) return;
+  container.appendChild(buildNodeElement(proofTree, true));
+  updateHypPanel();
+  // Check for proof completion after every render
+  if (isProofComplete(proofTree) && !proofJustCompleted) {
+    proofJustCompleted = true;
+    celebrationTimeout = setTimeout(celebrateCompletion, 200);
+  }
+}
+
+// True iff every node in the tree has status 'ok'
+function isProofComplete(node) {
+  if (node.status !== 'ok') return false;
+  return node.children.every(isProofComplete);
+}
+
+let proofJustCompleted = false; // guard so we only celebrate once
+let celebrationTimeout = null;  // so we can cancel if user resets quickly
+
+function buildNodeElement(node, isRoot) {
+  const branch = document.createElement('div');
+  branch.className = 'tree-branch';
+
+  if (node.children.length > 0) {
+    const childRow = document.createElement('div');
+    childRow.className = 'branch-children';
+    node.children.forEach(child => childRow.appendChild(buildNodeElement(child, false)));
+    branch.appendChild(childRow);
+
+    const hWrap = document.createElement('div');
+    hWrap.className = 'horizontal-line-wrap';
+    const hLine = document.createElement('div');
+    hLine.className = 'horizontal-line';
+    hWrap.appendChild(hLine);
+
+    if (node.rule) {
+      const rule = ruleById(node.rule);
+      const lbl  = document.createElement('div');
+      lbl.className   = 'rule-label';
+      lbl.textContent = (rule ? rule.symbol : node.rule) + (node.cancelNum ? `[${node.cancelNum}]` : '');
+      hWrap.appendChild(lbl);
+    }
+    branch.appendChild(hWrap);
+
+    const vLine = document.createElement('div');
+    vLine.className = 'vertical-line';
+    branch.appendChild(vLine);
+  }
+
+  branch.appendChild(buildNodeCard(node, isRoot));
+  return branch;
+}
+
+function buildNodeCard(node, isRoot) {
+  const card = document.createElement('div');
+  card.className = 'node-card';
+  if (isRoot)              card.classList.add('node-root');
+  if (node.isOpen)         card.classList.add('node-open');
+  if (node.status==='ok')  card.classList.add('node-ok');
+  if (node.status==='warn')card.classList.add('node-warn');
+  if (node.status==='err') card.classList.add('node-err');
+
+  // Status dot
+  const dot = document.createElement('div');
+  const dotClass = node.status==='ok' ? 'dot-ok' : node.status==='err' ? 'dot-err' : node.status==='warn' ? 'dot-warn' : 'dot-pending';
+  dot.className = 'node-status-dot ' + dotClass;
+  if (node.rule==='cancel') {
+    dot.title = node.status==='ok'
+      ? 'Branch complete — hypothesis successfully cancelled ✓'
+      : 'Enter hypothesis number; formula must match exactly';
+  } else {
+    dot.title = node.status==='ok'  ? 'Step proved ✓'
+              : node.status==='err' ? 'Error — see feedback panel'
+              : node.status==='warn'? 'Formula filled but step not yet proved'
+              : 'Empty — awaiting formula';
+  }
+  card.appendChild(dot);
+
+  // Formula
+  if (node.isOpen || (isRoot && !node.formula)) {
+    const inp = document.createElement('input');
+    inp.type='text'; inp.className='node-formula-input';
+    inp.value=node.formula||''; inp.placeholder='Enter formula…';
+    inp.autocomplete='off'; inp.spellcheck=false;
+    inp.addEventListener('change', () => handleFormulaEdit(node, inp.value));
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') handleFormulaEdit(node, inp.value); });
+    attachLiveRender(inp);
+    card.appendChild(inp);
+  } else {
+    const disp = document.createElement('div');
+    disp.className='node-formula-display';
+    disp.textContent=renderFormula(node.formula); disp.title='Click to edit';
+    disp.addEventListener('click', () => { node.isOpen=true; renderTree(); });
+    card.appendChild(disp);
+  }
+
+  // Hint button for blank premise nodes
+  if (node.isOpen && !isRoot) {
+    const parent = findParent(proofTree, node);
+    if (parent && parent.rule) {
+      const idx  = parent.children.indexOf(node);
+      const hint = computeHint(parent, idx);
+      if (hint) {
+        const hb = document.createElement('button');
+        hb.className='hint-btn'; hb.textContent='💡 Hint';
+        hb.addEventListener('click', () =>
+          showFeedback('info','Hint',`For ${ruleById(parent.rule)?.label}, premise ${idx+1} should be: ${hint}`)
+        );
+        card.appendChild(hb);
+      }
+    }
+  }
+
+  // Hypothesis section (for →I and ¬I)
+  if (node.rule && ruleById(node.rule)?.genHyp && node.children.length > 0) {
+    const sec = document.createElement('div');
+    sec.className='node-section';
+    const slbl = document.createElement('div');
+    slbl.className='node-section-label'; slbl.textContent='NEW HYPOTHESIS';
+    sec.appendChild(slbl);
+
+    const row = document.createElement('div'); row.className='node-hyp-row';
+    const nlbl = document.createElement('label'); nlbl.textContent='#';
+    const numInp = document.createElement('input');
+    numInp.className='node-num-input'; numInp.type='number'; numInp.min=1;
+    numInp.value=node.hypNum||''; numInp.placeholder='n'; numInp.title='Hypothesis number';
+    numInp.addEventListener('change', () => handleHypNum(node, numInp.value));
+
+    const fInp = document.createElement('input');
+    fInp.type='text'; fInp.className='node-formula-input'; fInp.style.fontSize='0.82rem';
+    fInp.value=node.hypFormula||''; fInp.placeholder='hypothesis formula';
+    fInp.title='The formula assumed as hypothesis at this step';
+    fInp.addEventListener('change', () => handleHypFormula(node, fInp.value));
+    fInp.addEventListener('keydown', e => { if(e.key==='Enter') handleHypFormula(node, fInp.value); });
+    attachLiveRender(fInp);
+    row.appendChild(nlbl); row.appendChild(numInp); row.appendChild(fInp);
+    sec.appendChild(row);
+
+    const hb2 = document.createElement('button');
+    hb2.className='hint-btn'; hb2.textContent='💡 Hint';
+    hb2.addEventListener('click', () => {
+      const ast=tryParse(node.formula);
+      let hint='';
+      if (node.rule==='imp-i'&&ast?.op==='IMP') hint=fmtAST(ast.left);
+      else if (node.rule==='neg-i'&&ast?.op==='NEG') hint=fmtAST(ast.sub);
+      showFeedback('info','Hypothesis hint', hint
+        ? `When applying ${ruleById(node.rule)?.label} to ${fmtAST(ast)}, assume: ${hint}`
+        : 'The hypothesis is the antecedent (for →I) or the formula being negated (for ¬I).');
+    });
+    sec.appendChild(hb2);
+    card.appendChild(sec);
+  }
+
+  // Cancel section
+  if (node.rule==='cancel') {
+    const sec = document.createElement('div'); sec.className='node-section';
+    const slbl = document.createElement('div');
+    slbl.className='node-section-label'; slbl.textContent='CANCEL HYPOTHESIS';
+    sec.appendChild(slbl);
+    const row = document.createElement('div'); row.className='node-hyp-row';
+    const clbl = document.createElement('label'); clbl.textContent='Hyp #';
+    const cInp = document.createElement('input');
+    cInp.className='node-num-input'; cInp.type='number'; cInp.min=1;
+    cInp.value=node.cancelNum||''; cInp.placeholder='n';
+    cInp.title='The hypothesis number to cancel — formula here must match it exactly';
+    cInp.addEventListener('change', () => handleCancelNum(node, cInp.value));
+    cInp.addEventListener('keydown', e => { if(e.key==='Enter') handleCancelNum(node, cInp.value); });
+    row.appendChild(clbl); row.appendChild(cInp);
+    sec.appendChild(row);
+    card.appendChild(sec);
+  }
+
+  // Rule selector (leaf with formula, no rule yet)
+  if (node.children.length===0 && !node.isHypLeaf && node.formula && !node.rule) {
+    const actions = document.createElement('div'); actions.className='node-actions';
+    const sel = document.createElement('select'); sel.className='rule-select';
+    const defO = document.createElement('option'); defO.value=''; defO.textContent='— apply rule —';
+    sel.appendChild(defO);
+    RULES.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.label; sel.appendChild(o); });
+    const applyBtn = document.createElement('button');
+    applyBtn.className='apply-rule-btn'; applyBtn.textContent='Apply Rule';
+    applyBtn.addEventListener('click', () => { if(sel.value) applyRule(node, sel.value); });
+    actions.appendChild(sel); actions.appendChild(applyBtn);
+    card.appendChild(actions);
+  }
+
+  // Change rule button (rule already applied)
+  if (node.rule) {
+    const chBtn = document.createElement('button');
+    chBtn.className='apply-rule-btn change-btn'; chBtn.textContent='↺ Change rule';
+    chBtn.title='Clear this rule and all branches above it, including any hypotheses introduced there';
+    chBtn.addEventListener('click', () => changeRule(node));
+    card.appendChild(chBtn);
+  }
+
+  return card;
+}
+
+// ═══════════════════════════════════════════
+//  TREE MANIPULATION
+// ═══════════════════════════════════════════
+
+function removeHypsAt(node) {
+  if (node.hypNum && hypotheses[node.hypNum]) delete hypotheses[node.hypNum];
+  node.children.forEach(removeHypsAt);
+}
+
+function clearNode(node) {
+  removeHypsAt(node);
+  node.children=[]; node.rule=null; node.status=null;
+  node.hypNum=null; node.hypFormula=null; node.cancelNum=null; node.isHypLeaf=false;
+}
+
+function changeRule(node) {
+  clearNode(node);
+  renderTree();
+  showFeedback('info','Rule cleared','The rule and all branches above this node have been removed, including any hypotheses they introduced. Pick a new rule.');
+}
+
+async function applyRule(node, ruleId) {
+  const rule = ruleById(ruleId);
+  if (!rule) return;
+
+  if (ruleId==='cancel') {
+    node.rule='cancel'; node.status=null;
+    renderTree();
+    showFeedback('info','Cancel Hypothesis',
+      'Enter the hypothesis number to cancel. The formula in this node must match the hypothesis exactly — if it does, the dot turns green and the branch is complete.');
+    return;
+  }
+
+  if (ruleId==='lem') {
+    // LEM is a classical axiom — no premises needed, branch is immediately closed
+    const isValid = feedbackForRule(node, ruleId);
+    if (!isValid) return;
+    node.rule='lem'; node.status='ok'; node.isHypLeaf=true;
+    renderTree();
+    return;
+  }
+
+  const isValid = feedbackForRule(node, ruleId);
+  if (!isValid) return;
+
+  node.rule=ruleId;
+  // Green immediately: the rule choice is confirmed. Premises above are their own nodes.
+  // genHyp rules stay null/pending until the hypothesis formula is also validated.
+  node.status = rule.genHyp ? null : 'ok';
+
+  // Create blank premise nodes — user fills everything
+  for (let i=0; i<rule.premises; i++) {
+    node.children.push(newNode(''));
+  }
+
+  // genHyp: assign the next free number, leave formula blank for user to fill
+  if (rule.genHyp) {
+    while (hypotheses[nextHypNum]) nextHypNum++; // skip any manually-used numbers
+    node.hypNum = nextHypNum++;
+    node.hypFormula = '';
+  }
+  renderTree();
+}
+
+// ═══════════════════════════════════════════
+//  EVENT HANDLERS
+// ═══════════════════════════════════════════
+
+function handleFormulaEdit(node, val) {
+  const trimmed = val.trim();
+  node.formula = trimmed;
+  node.isOpen  = !trimmed;
+  node.status  = null;
+
+  if (!trimmed) { renderTree(); return; }
+
+  const ast = tryParse(trimmed);
+  if (!ast) {
+    showFeedback('err','Parse Error',
+      `Could not parse \`${val}\`. Use /\\ or \\and for ∧, \\/ or \\or for ∨, -> or \\to for →, ~ or \\neg for ¬, _|_ or \\bot for ⊥.`);
+    node.status='err'; renderTree(); return;
+  }
+  node.formula = fmtAST(ast);
+
+  // Cancel nodes: re-validate
+  if (node.rule==='cancel') {
+    validateCancel(node).then(() => renderTree());
+    return;
+  }
+
+  // Formula is syntactically valid — show yellow while async validation runs
+  node.status = 'warn';
+  renderTree();
+
+  // Premise validation against parent's rule
+  const parent = findParent(proofTree, node);
+  if (parent && parent.rule) {
+    const idx = parent.children.indexOf(node);
+    const valid = feedbackForPremise(parent, node, parent.rule, idx);
+    node.status = valid ? 'warn' : 'err';
+    renderTree();
+  }
+  // If no parent rule (e.g. root node with no rule applied yet), leave as yellow
+}
+
+// Returns the set of hypothesis numbers that are in scope at `target`.
+// A hypothesis is in scope iff it was introduced by an ancestor of target
+// (i.e. a node on the path from root to target), not by a node in a sibling branch.
+function getAncestorHypNums(root, target) {
+  const nums = new Set();
+  function walk(node) {
+    if (node === target) return true;        // found it — stop, don't add target's own hyp
+    for (const child of node.children) {
+      if (walk(child)) {
+        // This node is an ancestor of target — collect its hypothesis if it has one
+        if (node.hypNum && node.hypFormula && node.status === 'ok') nums.add(node.hypNum);
+        return true;
+      }
+    }
+    return false;
+  }
+  walk(root);
+  return nums;
+}
+
+function validateCancel(node) {
+  const n = node.cancelNum;
+  if (!n || !node.formula) { node.status=null; return; }
+
+  const hyp = hypotheses[n];
+  if (!hyp) {
+    node.status='err';
+    showFeedback('err','No such hypothesis',
+      `There is no hypothesis numbered ${n}. Check the hypothesis panel for current numbers.`);
+    return;
+  }
+
+  const inScope = getAncestorHypNums(proofTree, node);
+  if (!inScope.has(n)) {
+    node.status='err';
+    showFeedback('err','Hypothesis out of scope',
+      `Hypothesis [${n}] (${renderFormula(hyp.formula)}) was not introduced on the path leading to this node — it belongs to a different branch. You can only cancel a hypothesis introduced by an ancestor of this node.`);
+    return;
+  }
+
+  const hypAst  = tryParse(hyp.formula);
+  const nodeAst = tryParse(node.formula);
+  const match   = hypAst && nodeAst && astEqual(hypAst, nodeAst);
+
+  if (match) {
+    node.status = 'ok';
+    hyp.cancelled = true;
+    updateHypPanel();
+    showFeedback('ok','Branch complete ✓',
+      `${node.formula} matches hypothesis [${n}]: ${hyp.formula}. The hypothesis is cancelled and this branch is closed.`);
+  } else {
+    node.status='err';
+    const hf = hypAst ? fmtAST(hypAst) : hyp.formula;
+    const nf = nodeAst ? fmtAST(nodeAst) : node.formula;
+    showFeedback('err','Formula mismatch',
+      `${nf} does not match hypothesis [${n}] (${hf}). To cancel a hypothesis, the formula in this node must be identical to the hypothesis formula.`);
+  }
+}
+
+function handleHypNum(node, val) {
+  const n = parseInt(val);
+  if (!n || n < 1) return;
+
+  // Check whether n is already used by a *different* node
+  if (hypotheses[n] && node.hypNum !== n) {
+    showFeedback('err', 'Duplicate hypothesis number',
+      `Hypothesis number ${n} is already in use (formula: ${renderFormula(hypotheses[n].formula)}). ` +
+      `Each hypothesis must have a unique number — please choose a different one.`);
+    // Reset the input back to the previous value visually (renderTree will redraw it)
+    renderTree();
+    return;
+  }
+
+  // Remove the old entry if it existed under a different number
+  if (node.hypNum && node.hypNum !== n && hypotheses[node.hypNum]) {
+    delete hypotheses[node.hypNum];
+  }
+  node.hypNum = n;
+  // Only register under the new number if the formula was already validated as correct
+  if (node.hypFormula && node.status === 'ok') {
+    hypotheses[n] = {formula: node.hypFormula, cancelled: false};
+    updateHypPanel();
+  }
+}
+
+function handleHypFormula(node, val) {
+  const trimmed = val.trim();
+  const ast = tryParse(trimmed);
+  node.hypFormula = ast ? fmtAST(ast) : trimmed;
+
+  // Remove any previously registered hypothesis for this node while we re-validate
+  if (node.hypNum && hypotheses[node.hypNum]) {
+    delete hypotheses[node.hypNum];
+    updateHypPanel();
+  }
+
+  // Reset dot to pending until validation passes
+  node.status = null;
+  renderTree();
+
+  // Validate — will register the hypothesis and set status only if correct
+  validateHypFormula(node);
+}
+
+function validateHypFormula(node) {
+  if (!node.hypFormula || !node.formula) return;
+
+  const goalAst = tryParse(node.formula);
+  const hypAst  = tryParse(node.hypFormula);
+  if (!goalAst || !hypAst) return;
+
+  let expectedAst = null;
+  let ruleName    = '';
+
+  if (node.rule === 'imp-i') {
+    if (goalAst.op !== 'IMP') return;
+    expectedAst = goalAst.left;
+    ruleName    = '→I';
+  } else if (node.rule === 'neg-i') {
+    if (goalAst.op !== 'NEG') return;
+    expectedAst = goalAst.sub;
+    ruleName    = '¬I';
+  } else {
+    return;
+  }
+
+  const expected = fmtAST(expectedAst);
+  const got      = fmtAST(hypAst);
+  const goal     = fmtAST(goalAst);
+  const what     = node.rule === 'imp-i' ? 'antecedent' : 'formula being negated';
+
+  if (astEqual(hypAst, expectedAst)) {
+    if (node.hypNum) {
+      hypotheses[node.hypNum] = {formula: node.hypFormula, cancelled: false};
+      updateHypPanel();
+    }
+    node.status = 'ok';
+    renderTree();
+    showFeedback('ok', 'Correct Hypothesis',
+      `${got} is exactly the right hypothesis for ${ruleName} on ${goal}.`);
+  } else {
+    node.status = 'err';
+    renderTree();
+    showFeedback('err', 'Wrong Hypothesis',
+      `For ${ruleName} on ${goal}, the hypothesis must be ${expected} (the ${what}). You wrote ${got}.`);
+  }
+}
+
+function handleCancelNum(node, val) {
+  const n = parseInt(val);
+  if (!n||n<1) { node.cancelNum=null; renderTree(); return; }
+  node.cancelNum = n;
+  validateCancel(node);
+  renderTree();
+}
+
+function findParent(root, target) {
+  if (!root) return null;
+  for (const child of root.children) {
+    if (child===target) return root;
+    const found = findParent(child, target);
+    if (found) return found;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════
+//  HYPOTHESIS PANEL
+// ═══════════════════════════════════════════
+
+function updateHypPanel() {
+  const list = document.getElementById('hyp-list');
+  const nums = Object.keys(hypotheses).map(Number).sort((a,b)=>a-b);
+  if (nums.length===0) { list.innerHTML='<div class="hyp-empty">No hypotheses yet</div>'; return; }
+  list.innerHTML='';
+  nums.forEach(n => {
+    const h=hypotheses[n];
+    const item=document.createElement('div'); item.className='hyp-item';
+    const ne=document.createElement('span'); ne.className='hyp-num'; ne.textContent=n;
+    const fe=document.createElement('span'); fe.className='hyp-formula'+(h.cancelled?' hyp-cancelled':'');
+    fe.textContent=renderFormula(h.formula);
+    item.appendChild(ne); item.appendChild(fe);
+    list.appendChild(item);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+
+document.getElementById('startBtn').addEventListener('click', startProof);
+
+// Live preview + live Unicode replacement on the root formula input
+const rootInput = document.getElementById('rootInput');
+attachLiveRender(rootInput);
+rootInput.addEventListener('input', () => {
+  const val     = rootInput.value;
+  const preview = document.getElementById('rootPreview');
+  if (!val.trim()) { preview.textContent = ''; return; }
+  const ast = tryParse(val);
+  preview.textContent = ast ? fmtAST(ast) : '';
+  preview.style.color = ast ? 'var(--accent)' : 'var(--chalk-faint)';
+});
+rootInput.addEventListener('keydown', e => { if (e.key === 'Enter') startProof(); });
+
+document.getElementById('fbClose').addEventListener('click', hideFeedback);
+document.getElementById('resetBtn').addEventListener('click', resetProof);
+document.getElementById('hypToggle').addEventListener('click', () => {
+  const panel=document.getElementById('hyp-panel');
+  const btn=document.getElementById('hypToggle');
+  panel.classList.toggle('hidden');
+  btn.textContent=panel.classList.contains('hidden')?'Hypotheses ▶':'Hypotheses ◀';
+});
+
+function startProof() {
+  // Validate name first
+  const nameResult = sanitiseName(document.getElementById('studentName').value);
+  const nameError  = document.getElementById('nameError');
+  if (!nameResult.ok) {
+    nameError.textContent = nameResult.error;
+    document.getElementById('studentName').focus();
+    return;
+  }
+  nameError.textContent = '';
+  currentStudentName = nameResult.name;
+  const val=document.getElementById('rootInput').value.trim();
+  if (!val) return;
+  const ast=tryParse(val);
+  if (!ast) {
+    showFeedback('err','Parse Error',
+      `Could not parse \`${val}\`. Use /\\ or \\and for ∧, \\/ or \\or for ∨, -> or \\to for →, ~ or \\neg for ¬, _|_ or \\bot for ⊥.`);
+    return;
+  }
+  const formulaStr=fmtAST(ast);
+  hypotheses={}; nextHypNum=1; nodeIdCounter=0;
+  proofJustCompleted=false;
+  clearTimeout(celebrationTimeout); celebrationTimeout=null;
+  proofTree=newNode(formulaStr);
+  proofTree.status='warn';
+  // Start timer
+  startTimer(); // filled but not proved yet
+
+  document.getElementById('start-panel').style.display='none';
+  const tc=document.getElementById('tree-container');
+  tc.style.display='flex'; tc.style.flexDirection='column'; tc.style.alignItems='center';
+  document.getElementById('resetBtn').style.display='inline-block';
+  renderTree(); updateHypPanel();
+  showFeedback('info','Proof Started',`Now proving: ${formulaStr}. Select a rule from the dropdown on the root node to begin.`);
+}
+
+function resetProof() {
+  proofTree=null; hypotheses={}; nextHypNum=1; nodeIdCounter=0; proofJustCompleted=false;
+  clearTimeout(celebrationTimeout); celebrationTimeout=null;
+  stopTimer();
+  document.getElementById('start-panel').style.display='flex';
+  const tc=document.getElementById('tree-container');
+  tc.style.display='none'; tc.innerHTML='';
+  document.getElementById('rootInput').value='';
+  document.getElementById('rootPreview').textContent='';
+  document.getElementById('resetBtn').style.display='none';
+  updateHypPanel(); hideFeedback();
+}
+
+// ═══════════════════════════════════════════
+//  TAUTOLOGY CHECKER
+// ═══════════════════════════════════════════
+
+function evalAST(ast, env) {
+  switch(ast.op) {
+    case 'ATOM': return env[ast.v] === true;
+    case 'BOT':  return false;
+    case 'NEG':  return !evalAST(ast.sub, env);
+    case 'AND':  return evalAST(ast.left, env) && evalAST(ast.right, env);
+    case 'OR':   return evalAST(ast.left, env) || evalAST(ast.right, env);
+    case 'IMP':  return !evalAST(ast.left, env) || evalAST(ast.right, env);
+    default:     return false;
+  }
+}
+
+function collectAtoms(ast, out = new Set()) {
+  if (!ast) return out;
+  if (ast.op === 'ATOM') { out.add(ast.v); return out; }
+  if (ast.sub)   collectAtoms(ast.sub, out);
+  if (ast.left)  collectAtoms(ast.left, out);
+  if (ast.right) collectAtoms(ast.right, out);
+  return out;
+}
+
+function isTautology(ast) {
+  const atoms = [...collectAtoms(ast)];
+  const n = atoms.length;
+  if (n === 0) return evalAST(ast, {});
+  for (let mask = 0; mask < (1 << n); mask++) {
+    const env = {};
+    atoms.forEach((a, i) => { env[a] = !!(mask & (1 << i)); });
+    if (!evalAST(ast, env)) return false;
+  }
+  return true;
+}
+
+// ═══════════════════════════════════════════
+//  FORMULA GENERATOR
+// ═══════════════════════════════════════════
+
+function randomAST(atoms, maxDepth) {
+  const leaf = () => ({ op:'ATOM', v: atoms[Math.floor(Math.random() * atoms.length)] });
+  function build(depth) {
+    if (depth <= 0) return leaf();
+    const r = Math.random();
+    if (r < 0.10) return leaf();
+    if (r < 0.25) return { op:'NEG', sub: build(depth - 1) };
+    if (r < 0.45) return { op:'AND', left: build(depth - 1), right: build(depth - 1) };
+    if (r < 0.60) return { op:'OR',  left: build(depth - 1), right: build(depth - 1) };
+    return           { op:'IMP', left: build(depth - 1), right: build(depth - 1) };
+  }
+  return build(maxDepth);
+}
+
+function generateTautology(numAtoms, maxTries = 3000) {
+  const atomNames = ['A','B','C','D','E'].slice(0, numAtoms);
+  const maxDepth  = numAtoms + 1;
+  for (let i = 0; i < maxTries; i++) {
+    const ast = randomAST(atomNames, maxDepth);
+    if (ast.op === 'ATOM') continue;
+    if (ast.op === 'NEG' && ast.sub?.op === 'ATOM') continue;
+    if (!isTautology(ast)) continue;
+    if (collectAtoms(ast).size < numAtoms) continue;
+    return fmtAST(ast);
+  }
+  return null;
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => {
+  const btn    = document.getElementById('generateBtn');
+  const status = document.getElementById('genStatus');
+  const nRaw   = parseInt(document.getElementById('genAtoms').value);
+  const n      = Math.max(1, Math.min(5, isNaN(nRaw) ? 2 : nRaw));
+
+  btn.disabled = true;
+  status.textContent = 'Searching…';
+  status.style.color = 'var(--chalk-faint)';
+
+  setTimeout(() => {
+    const formula = generateTautology(n);
+    btn.disabled = false;
+    if (formula) {
+      rootInput.value = formula;
+      rootInput.dispatchEvent(new Event('input'));
+      status.textContent = `✓ Found a provable formula with ${n} atom${n>1?'s':''}`;
+      status.style.color = 'var(--green)';
+    } else {
+      status.textContent = '✗ Could not find one — try again or change the atom count';
+      status.style.color = 'var(--red)';
+    }
+  }, 20);
+});
+
+// ═══════════════════════════════════════════
+//  FIREWORKS
+// ═══════════════════════════════════════════
+
+(function(){
+  const canvas = document.getElementById('fireworks-canvas');
+  const ctx    = canvas.getContext('2d');
+  let   particles = [];
+  let   animId    = null;
+  let   running   = false;
+  let   salvoTimer = null;
+
+  function resize() { canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COLORS=['#7ec896','#c8a96e','#7ec8c8','#e8c87c','#e8a0a0','#a0c8e8','#c8a0e8','#e8e4d8'];
+  const rnd = (a,b) => a+Math.random()*(b-a);
+
+  function burst(x,y) {
+    const n = Math.floor(rnd(60,90));
+    for (let i=0;i<n;i++) {
+      const angle = (Math.PI*2/n)*i + rnd(-0.1,0.1);
+      const speed = rnd(2,7);
+      particles.push({
+        x,y, vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed,
+        alpha:1, radius:rnd(2,4),
+        color:COLORS[Math.floor(Math.random()*COLORS.length)],
+        decay:rnd(0.012,0.022), gravity:0.09, trail:[]
+      });
+    }
+  }
+
+  function salvo() {
+    const n=Math.floor(rnd(3,6));
+    for(let i=0;i<n;i++)
+      setTimeout(()=>burst(rnd(canvas.width*.15,canvas.width*.85),rnd(canvas.height*.1,canvas.height*.45)),i*rnd(80,180));
+  }
+
+  function step() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles=particles.filter(p=>p.alpha>0.02);
+    for(const p of particles){
+      p.trail.push({x:p.x,y:p.y,a:p.alpha});
+      if(p.trail.length>5) p.trail.shift();
+      for(let t=0;t<p.trail.length;t++){
+        const pt=p.trail[t];
+        ctx.beginPath(); ctx.arc(pt.x,pt.y,p.radius*.5,0,Math.PI*2);
+        ctx.fillStyle=p.color; ctx.globalAlpha=pt.a*.3*(t/p.trail.length); ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+      ctx.fillStyle=p.color; ctx.globalAlpha=p.alpha; ctx.fill();
+      ctx.globalAlpha=1;
+      p.x+=p.vx; p.y+=p.vy; p.vy+=p.gravity; p.vx*=.98; p.alpha-=p.decay;
+    }
+    if(running||particles.length>0) animId=requestAnimationFrame(step);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+
+  window.startFireworks=function(){
+    running=true; particles=[]; resize(); salvo();
+    let t=0;
+    salvoTimer=setInterval(()=>{ salvo(); if(++t>=4){clearInterval(salvoTimer);running=false;} },900);
+    cancelAnimationFrame(animId); step();
+  };
+  window.stopFireworks=function(){
+    running=false; clearInterval(salvoTimer); particles=[];
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  };
+})();
+
+function celebrateCompletion() {
+  if (!proofTree || !isProofComplete(proofTree)) return;
+  const elapsed  = stopTimer();
+  const formula  = proofTree ? proofTree.formula : '';
+  const { score, connectives } = computeScore(formula, elapsed);
+
+  // Record in local history
+  proofHistory.push({ formula, elapsed });
+
+  // Set up pending leaderboard entry
+  pendingEntry = {
+    name:    currentStudentName || 'Anonymous',
+    formula,
+    score,
+    elapsed,
+    connectives,
+    date: new Date().toISOString(),
+  };
+
+  // Build completion body — using textContent for safety
+  const body = document.getElementById('completion-body');
+  body.innerHTML = '';
+  const line1 = document.createElement('p');
+  line1.textContent = 'Well done — all branches are closed and the proof is complete.';
+  const line2 = document.createElement('p');
+  line2.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:.88rem;margin-top:6px';
+  line2.textContent = formula;
+  const line3 = document.createElement('p');
+  line3.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:.72rem;color:var(--accent2);margin-top:4px';
+  line3.textContent = `⏱ ${formatTime(elapsed)}  ·  ${connectives} connective${connectives!==1?'s':''}`;
+  body.appendChild(line1); body.appendChild(line2); body.appendChild(line3);
+
+  // Score display
+  const scoreEl = document.getElementById('score-display');
+  scoreEl.textContent = `Score: ${score}`;
+
+  // Show submit button only if student has a name
+  const submitRow = document.getElementById('submit-row');
+  const submitBtn = document.getElementById('submitScoreBtn');
+  const submitStatus = document.getElementById('submit-status');
+  submitRow.style.display = currentStudentName ? 'flex' : 'none';
+  submitBtn.disabled = false;
+  submitBtn.style.display = '';
+  submitStatus.textContent = '';
+
+  document.getElementById('completion-panel').classList.add('visible');
+  hideFeedback();
+  window.startFireworks();
+}
+
+document.getElementById('tryAnotherBtn').addEventListener('click', () => {
+  document.getElementById('completion-panel').classList.remove('visible');
+  window.stopFireworks();
+  resetProof();
+});
+
+// ═══════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function startTimer() {
+  proofStartTime = Date.now();
+  const display = document.getElementById('timerDisplay');
+  display.classList.add('active');
+  display.textContent = '0:00';
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - proofStartTime) / 1000);
+    display.textContent = formatTime(elapsed);
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  const display = document.getElementById('timerDisplay');
+  display.classList.remove('active');
+  if (!proofStartTime) return 0;
+  const elapsed = Math.floor((Date.now() - proofStartTime) / 1000);
+  proofStartTime = null;
+  return elapsed;
+}
+
+// ═══════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (proofHistory.length === 0) {
+    list.innerHTML = '<div class="history-empty">No proofs completed yet.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  [...proofHistory].reverse().forEach((entry, i) => {
+    const row = document.createElement('div');
+    row.className = 'history-row';
+    const idx = document.createElement('span');
+    idx.className = 'history-index';
+    idx.textContent = `#${proofHistory.length - i}`;
+    const formula = document.createElement('span');
+    formula.className = 'history-formula';
+    formula.textContent = entry.formula;
+    const time = document.createElement('span');
+    time.className = 'history-time';
+    time.textContent = formatTime(entry.elapsed);
+    row.appendChild(idx); row.appendChild(formula); row.appendChild(time);
+    list.appendChild(row);
+  });
+}
+
+function openHistory() { renderHistory(); document.getElementById('history-modal').classList.add('open'); }
+function closeHistory() { document.getElementById('history-modal').classList.remove('open'); }
+
+document.getElementById('historyBtn').addEventListener('click', openHistory);
+document.getElementById('historyClose').addEventListener('click', closeHistory);
+document.getElementById('historyBackdrop').addEventListener('click', closeHistory);
+document.getElementById('historyClear').addEventListener('click', () => { proofHistory=[]; renderHistory(); });
+
+document.getElementById('leaderboardBtn').addEventListener('click', openLeaderboard);
+document.getElementById('lbClose').addEventListener('click', closeLeaderboard);
+document.getElementById('lbBackdrop').addEventListener('click', closeLeaderboard);
+document.getElementById('lbRefresh').addEventListener('click', () => loadLeaderboard().then(renderLeaderboard));
+document.getElementById('submitScoreBtn').addEventListener('click', submitScore);
+
+// ═══════════════════════════════════════════
+//  NAME VALIDATION
+// ═══════════════════════════════════════════
+
+const BLOCKED_WORDS = [
+  'fuck','shit','cunt','bitch','asshole','bastard','dick','cock','pussy','nigger',
+  'nigga','faggot','fag','retard','whore','slut','twat','prick','arse','bollocks',
+  'wanker','tosser','bellend','motherfucker','fucker','moron','idiot',
+];
+
+function sanitiseName(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return { ok:false, error:'Please enter your name before starting.' };
+  if (trimmed.length > 30) return { ok:false, error:'Name must be 30 characters or fewer.' };
+  if (!/^[\p{L}\p{N} '\-_.]+$/u.test(trimmed))
+    return { ok:false, error:"Name may only contain letters, digits, spaces, hyphens, apostrophes, underscores, and dots." };
+  const lower = trimmed.toLowerCase();
+  for (const w of BLOCKED_WORDS) {
+    if (lower.includes(w)) return { ok:false, error:'Please choose an appropriate name.' };
+  }
+  return { ok:true, name: trimmed.replace(/\s+/g,' ') };
+}
+
+// ═══════════════════════════════════════════
+//  SCORING
+// ═══════════════════════════════════════════
+
+function countConnectives(ast) {
+  if (!ast || ast.op==='ATOM' || ast.op==='BOT') return 0;
+  if (ast.op==='NEG') return 1 + countConnectives(ast.sub);
+  return 1 + countConnectives(ast.left) + countConnectives(ast.right);
+}
+
+function computeScore(formulaStr, elapsedSeconds) {
+  const ast = tryParse(formulaStr);
+  const connectives = ast ? countConnectives(ast) : 1;
+  const raw = connectives * 100 - elapsedSeconds * 2;
+  return { score: Math.max(1, raw), connectives, elapsedSeconds };
+}
+
+// ═══════════════════════════════════════════
+//  LEADERBOARD  (via Cloudflare Worker)
+// ═══════════════════════════════════════════
+//
+//  Set this to your deployed Worker URL once you've followed worker/README.md
+//
+const WORKER_URL = 'https://natural-deduction.yourname.workers.dev';
+const LB_MAX = 100;
+let pendingEntry = null;
+
+async function loadLeaderboard() {
+  try {
+    if (WORKER_URL === 'https://natural-deduction.yourname.workers.dev') return [];
+    const resp = await fetch(`${WORKER_URL}/scores`);
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    return Array.isArray(data.scores) ? data.scores : [];
+  } catch(e) { return []; }
+}
+
+function renderLeaderboard(entries) {
+  const list = document.getElementById('lbList');
+  if (!entries || entries.length===0) {
+    list.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>';
+    return;
+  }
+  const sorted = [...entries].sort((a,b)=>b.score-a.score||a.elapsed-b.elapsed).slice(0,50);
+  list.innerHTML='';
+  sorted.forEach((e,i) => {
+    const row = document.createElement('div'); row.className='lb-row';
+    const rank = document.createElement('div');
+    rank.className='lb-rank'+(i===0?' gold':i===1?' silver':i===2?' bronze':'');
+    rank.textContent = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+    const nameCol = document.createElement('div');
+    const nameEl = document.createElement('div'); nameEl.className='lb-name';
+    nameEl.textContent = e.name;
+    const fEl = document.createElement('div'); fEl.className='lb-formula';
+    fEl.textContent = e.formula;
+    nameCol.appendChild(nameEl); nameCol.appendChild(fEl);
+    const scoreEl = document.createElement('div'); scoreEl.className='lb-score';
+    scoreEl.textContent = e.score;
+    const timeEl = document.createElement('div'); timeEl.className='lb-time';
+    timeEl.textContent = formatTime(e.elapsed);
+    row.appendChild(rank); row.appendChild(nameCol);
+    row.appendChild(scoreEl); row.appendChild(timeEl);
+    list.appendChild(row);
+  });
+}
+
+async function submitScore() {
+  if (!pendingEntry) return;
+  if (WORKER_URL === 'https://natural-deduction.yourname.workers.dev') {
+    document.getElementById('submit-status').textContent = '✗ Leaderboard not configured yet.';
+    return;
+  }
+  const btn    = document.getElementById('submitScoreBtn');
+  const status = document.getElementById('submit-status');
+  btn.disabled = true;
+  status.textContent = 'Saving…';
+  try {
+    const resp = await fetch(`${WORKER_URL}/submit`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(pendingEntry),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+    status.textContent = '✓ Saved!';
+    pendingEntry = null;
+    btn.style.display = 'none';
+  } catch(e) {
+    status.textContent = `✗ ${e.message || 'Failed — try again.'}`;
+    btn.disabled = false;
+  }
+}
+
+async function openLeaderboard() {
+  document.getElementById('leaderboard-modal').classList.add('open');
+  document.getElementById('lbList').innerHTML='<div class="lb-empty">Loading…</div>';
+  const entries = await loadLeaderboard();
+  renderLeaderboard(entries);
+}
+function closeLeaderboard() {
+  document.getElementById('leaderboard-modal').classList.remove('open');
+}
+
+updateHypPanel();
+</script>
+</body>
+</html>
