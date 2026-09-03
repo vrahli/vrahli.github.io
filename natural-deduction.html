@@ -1642,7 +1642,6 @@ let pendingEntry = null;
 
 async function loadLeaderboard() {
   try {
-    if (WORKER_URL === 'https://natural-deduction.vincent-rahli.workers.dev') return [];
     const resp = await fetch(`${WORKER_URL}/scores`);
     if (!resp.ok) return [];
     const data = await resp.json();
@@ -1681,10 +1680,6 @@ function renderLeaderboard(entries) {
 
 async function submitScore() {
   if (!pendingEntry) return;
-  if (WORKER_URL === 'https://natural-deduction.vincent-rahli.workers.dev') {
-    document.getElementById('submit-status').textContent = '✗ Leaderboard not configured yet.';
-    return;
-  }
   const btn    = document.getElementById('submitScoreBtn');
   const status = document.getElementById('submit-status');
   btn.disabled = true;
