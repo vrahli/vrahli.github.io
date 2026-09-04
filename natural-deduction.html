@@ -216,18 +216,25 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 /* LEADERBOARD MODAL */
 #leaderboard-modal{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center}
 #leaderboard-modal.open{display:flex}
-.lb-meta{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint);margin-bottom:14px;line-height:1.5}
-.lb-row{display:grid;grid-template-columns:28px 1fr auto auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.lb-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.lb-tab{font-family:'JetBrains Mono',monospace;font-size:.68rem;background:var(--bg3);
+  border:1px solid var(--line);color:var(--chalk-dim);padding:6px 12px;border-radius:4px;
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.lb-tab:hover{border-color:var(--accent2);color:var(--accent2)}
+.lb-tab.active{background:var(--accent2);color:var(--bg);border-color:var(--accent2)}
+.lb-tab-desc{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint);
+  margin-bottom:12px;line-height:1.5;min-height:1.4em}
+.lb-row{display:grid;grid-template-columns:28px 1fr auto;align-items:center;
+  gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
 .lb-row:last-child{border-bottom:none}
-.lb-row.lb-header{border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:4px}
 .lb-rank{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--chalk-faint);text-align:center}
 .lb-rank.gold{color:#ffd700;font-weight:700}
 .lb-rank.silver{color:#c0c0c0;font-weight:700}
 .lb-rank.bronze{color:#cd7f32;font-weight:700}
-.lb-name{font-family:'EB Garamond',serif;font-size:.95rem;color:var(--chalk);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-formula{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-score{font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--accent);white-space:nowrap;text-align:right;font-weight:700}
-.lb-time{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--chalk-faint);white-space:nowrap;text-align:right}
+.lb-name{font-family:'EB Garamond',serif;font-size:.95rem;color:var(--chalk)}
+.lb-sub{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--chalk-faint);margin-top:1px}
+.lb-value{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--accent);
+  white-space:nowrap;text-align:right;font-weight:700}
 .lb-empty{color:var(--chalk-faint);font-style:italic;font-size:.9rem;text-align:center;margin-top:16px}
 </style>
 </head>
@@ -329,10 +336,16 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 
 <div id="leaderboard-modal">
   <div class="history-backdrop" id="lbBackdrop"></div>
-  <div class="history-box">
+  <div class="history-box" style="width:min(640px,92vw)">
     <button class="history-close" id="lbClose">✕</button>
-    <h2>🏆 Leaderboard</h2>
-    <div class="lb-meta">Top scores across all students. Score = connectives × 100 − seconds × 2.</div>
+    <h2>Leaderboard</h2>
+    <div class="lb-tabs">
+      <button class="lb-tab active" data-tab="score">🏆 Best Score</button>
+      <button class="lb-tab" data-tab="proofs">📚 Most Proofs</button>
+      <button class="lb-tab" data-tab="efficiency">⚡ Efficiency</button>
+      <button class="lb-tab" data-tab="streak">🔥 Streak</button>
+    </div>
+    <div class="lb-tab-desc" id="lbTabDesc"></div>
     <div class="history-list" id="lbList"></div>
     <button class="history-clear" id="lbRefresh">↺ Refresh</button>
   </div>
@@ -538,6 +551,47 @@ let proofStartTime  = null;
 let timerInterval   = null;
 let proofHistory    = [];
 let currentStudentName = '';
+
+// Leaderboard
+const WORKER_URL = 'https://natural-deduction.vincent-rahli.workers.dev';
+const LB_MAX = 100;
+let pendingEntry = null;
+
+// ── Name validation ────────────────────────────────────────────────────────
+
+const BLOCKED_WORDS = [
+  'fuck','shit','cunt','bitch','asshole','bastard','dick','cock','pussy','nigger',
+  'nigga','faggot','fag','retard','whore','slut','twat','prick','arse','bollocks',
+  'wanker','tosser','bellend','motherfucker','fucker','moron','idiot',
+];
+
+function sanitiseName(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) return { ok:false, error:'Please enter your name before starting.' };
+  if (trimmed.length > 30) return { ok:false, error:'Name must be 30 characters or fewer.' };
+  if (!/^[\p{L}\p{N} '\-_.]+$/u.test(trimmed))
+    return { ok:false, error:"Name may only contain letters, digits, spaces, hyphens, apostrophes, underscores, and dots." };
+  const lower = trimmed.toLowerCase();
+  for (const w of BLOCKED_WORDS) {
+    if (lower.includes(w)) return { ok:false, error:'Please choose an appropriate name.' };
+  }
+  return { ok:true, name: trimmed.replace(/\s+/g,' ') };
+}
+
+// ── Scoring ────────────────────────────────────────────────────────────────
+
+function countConnectives(ast) {
+  if (!ast || ast.op==='ATOM' || ast.op==='BOT') return 0;
+  if (ast.op==='NEG') return 1 + countConnectives(ast.sub);
+  return 1 + countConnectives(ast.left) + countConnectives(ast.right);
+}
+
+function computeScore(formulaStr, elapsedSeconds) {
+  const ast = tryParse(formulaStr);
+  const connectives = ast ? countConnectives(ast) : 1;
+  const raw = connectives * 100 - elapsedSeconds * 2;
+  return { score: Math.max(1, raw), connectives, elapsedSeconds };
+}
 
 function newNode(formula) {
   return {
@@ -1589,56 +1643,15 @@ document.getElementById('lbClose').addEventListener('click', closeLeaderboard);
 document.getElementById('lbBackdrop').addEventListener('click', closeLeaderboard);
 document.getElementById('lbRefresh').addEventListener('click', () => loadLeaderboard().then(renderLeaderboard));
 document.getElementById('submitScoreBtn').addEventListener('click', submitScore);
-
-// ═══════════════════════════════════════════
-//  NAME VALIDATION
-// ═══════════════════════════════════════════
-
-const BLOCKED_WORDS = [
-  'fuck','shit','cunt','bitch','asshole','bastard','dick','cock','pussy','nigger',
-  'nigga','faggot','fag','retard','whore','slut','twat','prick','arse','bollocks',
-  'wanker','tosser','bellend','motherfucker','fucker','moron','idiot',
-];
-
-function sanitiseName(raw) {
-  const trimmed = raw.trim();
-  if (!trimmed) return { ok:false, error:'Please enter your name before starting.' };
-  if (trimmed.length > 30) return { ok:false, error:'Name must be 30 characters or fewer.' };
-  if (!/^[\p{L}\p{N} '\-_.]+$/u.test(trimmed))
-    return { ok:false, error:"Name may only contain letters, digits, spaces, hyphens, apostrophes, underscores, and dots." };
-  const lower = trimmed.toLowerCase();
-  for (const w of BLOCKED_WORDS) {
-    if (lower.includes(w)) return { ok:false, error:'Please choose an appropriate name.' };
-  }
-  return { ok:true, name: trimmed.replace(/\s+/g,' ') };
-}
-
-// ═══════════════════════════════════════════
-//  SCORING
-// ═══════════════════════════════════════════
-
-function countConnectives(ast) {
-  if (!ast || ast.op==='ATOM' || ast.op==='BOT') return 0;
-  if (ast.op==='NEG') return 1 + countConnectives(ast.sub);
-  return 1 + countConnectives(ast.left) + countConnectives(ast.right);
-}
-
-function computeScore(formulaStr, elapsedSeconds) {
-  const ast = tryParse(formulaStr);
-  const connectives = ast ? countConnectives(ast) : 1;
-  const raw = connectives * 100 - elapsedSeconds * 2;
-  return { score: Math.max(1, raw), connectives, elapsedSeconds };
-}
+document.querySelectorAll('.lb-tab').forEach(btn =>
+  btn.addEventListener('click', () => renderLbTab(btn.dataset.tab)));
 
 // ═══════════════════════════════════════════
 //  LEADERBOARD  (via Cloudflare Worker)
 // ═══════════════════════════════════════════
 //
-//  Set this to your deployed Worker URL once you've followed worker/README.md
+//  Set WORKER_URL at the top of the STATE section above.
 //
-const WORKER_URL = 'https://natural-deduction.vincent-rahli.workers.dev';
-const LB_MAX = 100;
-let pendingEntry = null;
 
 async function loadLeaderboard() {
   try {
@@ -1649,66 +1662,121 @@ async function loadLeaderboard() {
   } catch(e) { return []; }
 }
 
+// ── Aggregation ────────────────────────────────────────────────────────────
+
+function aggregateByStudent(entries) {
+  const map = {};
+  for (const e of entries) {
+    const key = e.name.toLowerCase().trim();
+    if (!map[key]) map[key] = { name: e.name, proofs: [], dates: new Set() };
+    map[key].proofs.push(e);
+    if (e.date) map[key].dates.add(e.date.slice(0,10));
+  }
+  return Object.values(map).map(s => {
+    const scores    = s.proofs.map(p => p.score);
+    const bestScore = Math.max(...scores);
+    const bestProof = s.proofs.find(p => p.score === bestScore);
+
+    const effProofs  = s.proofs.filter(p => p.connectives > 0);
+    const bestEff    = effProofs.length > 0
+      ? Math.min(...effProofs.map(p => p.elapsed / p.connectives)) : null;
+    const bestEffProof = effProofs.find(p => p.elapsed / p.connectives === bestEff) || null;
+
+    const days = [...s.dates].sort();
+    let best = days.length > 0 ? 1 : 0, cur = 1;
+    for (let i = 1; i < days.length; i++) {
+      const diff = (new Date(days[i]) - new Date(days[i-1])) / 86400000;
+      cur = diff === 1 ? cur + 1 : 1;
+      if (cur > best) best = cur;
+    }
+
+    return {
+      name: s.name, proofCount: s.proofs.length,
+      bestScore, bestFormula: bestProof?.formula || '',
+      bestEff, bestEffFormula: bestEffProof?.formula || '',
+      bestEffElapsed: bestEffProof?.elapsed || 0,
+      streak: best, lastDate: days[days.length - 1] || '',
+    };
+  });
+}
+
+// ── Tab config ──────────────────────────────────────────────────────────────────────────
+
+const TAB_CONFIG = {
+  score: {
+    desc:  'Best single proof score. Score = connectives × 100 − seconds × 2.',
+    sort:  (a,b) => b.bestScore - a.bestScore,
+    value: s => s.bestScore,
+    sub:   s => s.bestFormula,
+  },
+  proofs: {
+    desc:  'Total number of proofs completed and submitted.',
+    sort:  (a,b) => b.proofCount - a.proofCount,
+    value: s => `${s.proofCount} proof${s.proofCount!==1?'s':''}`,
+    sub:   () => '',
+  },
+  efficiency: {
+    desc:  'Best seconds-per-connective across all proofs (lower = faster). Rewards speed relative to formula complexity.',
+    sort:  (a,b) => { if(a.bestEff===null)return 1; if(b.bestEff===null)return -1; return a.bestEff-b.bestEff; },
+    value: s => s.bestEff !== null ? s.bestEff.toFixed(1)+'s/conn' : '—',
+    sub:   s => s.bestEffFormula ? `${s.bestEffFormula}  (${formatTime(s.bestEffElapsed)})` : '',
+  },
+  streak: {
+    desc:  'Longest streak of consecutive days with at least one proof submitted.',
+    sort:  (a,b) => b.streak - a.streak || a.lastDate.localeCompare(b.lastDate),
+    value: s => s.streak > 0 ? `${s.streak} day${s.streak!==1?'s':''}` : '—',
+    sub:   s => s.lastDate ? `last active ${s.lastDate}` : '',
+  },
+};
+
+let currentLbTab  = 'score';
+let currentLbData = [];
+
 function renderLeaderboard(entries) {
+  currentLbData = aggregateByStudent(entries);
+  renderLbTab(currentLbTab);
+}
+
+function renderLbTab(tab) {
+  currentLbTab = tab;
+  const cfg  = TAB_CONFIG[tab];
   const list = document.getElementById('lbList');
-  if (!entries || entries.length===0) {
+  document.getElementById('lbTabDesc').textContent = cfg.desc;
+  document.querySelectorAll('.lb-tab').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.tab === tab));
+
+  const sorted = [...currentLbData].sort(cfg.sort).slice(0,50);
+  if (sorted.length === 0) {
     list.innerHTML = '<div class="lb-empty">No scores yet — be the first!</div>';
     return;
   }
-  const sorted = [...entries].sort((a,b)=>b.score-a.score||a.elapsed-b.elapsed).slice(0,50);
-  list.innerHTML='';
-  sorted.forEach((e,i) => {
-    const row = document.createElement('div'); row.className='lb-row';
+  list.innerHTML = '';
+  sorted.forEach((s, i) => {
+    const row  = document.createElement('div'); row.className = 'lb-row';
     const rank = document.createElement('div');
-    rank.className='lb-rank'+(i===0?' gold':i===1?' silver':i===2?' bronze':'');
-    rank.textContent = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+    rank.className = 'lb-rank'+(i===0?' gold':i===1?' silver':i===2?' bronze':'');
+    rank.textContent = i===0?'\ud83e\udd47':i===1?'\ud83e\udd48':i===2?'\ud83e\udd49':`#${i+1}`;
     const nameCol = document.createElement('div');
-    const nameEl = document.createElement('div'); nameEl.className='lb-name';
-    nameEl.textContent = e.name;
-    const fEl = document.createElement('div'); fEl.className='lb-formula';
-    fEl.textContent = e.formula;
-    nameCol.appendChild(nameEl); nameCol.appendChild(fEl);
-    const scoreEl = document.createElement('div'); scoreEl.className='lb-score';
-    scoreEl.textContent = e.score;
-    const timeEl = document.createElement('div'); timeEl.className='lb-time';
-    timeEl.textContent = formatTime(e.elapsed);
-    row.appendChild(rank); row.appendChild(nameCol);
-    row.appendChild(scoreEl); row.appendChild(timeEl);
+    const nameEl  = document.createElement('div'); nameEl.className = 'lb-name';
+    nameEl.textContent = s.name;
+    const subEl   = document.createElement('div'); subEl.className  = 'lb-sub';
+    subEl.textContent  = cfg.sub(s);
+    nameCol.appendChild(nameEl); nameCol.appendChild(subEl);
+    const valEl = document.createElement('div'); valEl.className = 'lb-value';
+    valEl.textContent = cfg.value(s);
+    row.appendChild(rank); row.appendChild(nameCol); row.appendChild(valEl);
     list.appendChild(row);
   });
 }
 
-async function submitScore() {
-  if (!pendingEntry) return;
-  const btn    = document.getElementById('submitScoreBtn');
-  const status = document.getElementById('submit-status');
-  btn.disabled = true;
-  status.textContent = 'Saving…';
-  try {
-    const resp = await fetch(`${WORKER_URL}/submit`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(pendingEntry),
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(()=>({}));
-      throw new Error(err.error || `HTTP ${resp.status}`);
-    }
-    status.textContent = '✓ Saved!';
-    pendingEntry = null;
-    btn.style.display = 'none';
-  } catch(e) {
-    status.textContent = `✗ ${e.message || 'Failed — try again.'}`;
-    btn.disabled = false;
-  }
-}
-
 async function openLeaderboard() {
   document.getElementById('leaderboard-modal').classList.add('open');
-  document.getElementById('lbList').innerHTML='<div class="lb-empty">Loading…</div>';
+  document.getElementById('lbList').innerHTML = '<div class="lb-empty">Loading…</div>';
+  document.getElementById('lbTabDesc').textContent = '';
   const entries = await loadLeaderboard();
   renderLeaderboard(entries);
 }
+
 function closeLeaderboard() {
   document.getElementById('leaderboard-modal').classList.remove('open');
 }
