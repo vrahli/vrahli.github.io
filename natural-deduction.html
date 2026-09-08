@@ -1662,6 +1662,31 @@ async function loadLeaderboard() {
   } catch(e) { return []; }
 }
 
+async function submitScore() {
+  if (!pendingEntry) return;
+  const btn    = document.getElementById('submitScoreBtn');
+  const status = document.getElementById('submit-status');
+  btn.disabled = true;
+  status.textContent = 'Saving…';
+  try {
+    const resp = await fetch(`${WORKER_URL}/submit`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(pendingEntry),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+    status.textContent = '✓ Saved!';
+    pendingEntry = null;
+    btn.style.display = 'none';
+  } catch(e) {
+    status.textContent = `✗ ${e.message || 'Failed — try again.'}`;
+    btn.disabled = false;
+  }
+}
+
 // ── Aggregation ────────────────────────────────────────────────────────────
 
 function aggregateByStudent(entries) {
