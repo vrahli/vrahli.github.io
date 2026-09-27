@@ -1641,7 +1641,16 @@ document.getElementById('historyClear').addEventListener('click', () => { proofH
 document.getElementById('leaderboardBtn').addEventListener('click', openLeaderboard);
 document.getElementById('lbClose').addEventListener('click', closeLeaderboard);
 document.getElementById('lbBackdrop').addEventListener('click', closeLeaderboard);
-document.getElementById('lbRefresh').addEventListener('click', () => loadLeaderboard().then(renderLeaderboard));
+document.getElementById('lbRefresh').addEventListener('click', async () => {
+  document.getElementById('lbList').innerHTML = '<div class="lb-empty">Loading…</div>';
+  const result = await loadLeaderboard();
+  if (!result.ok) {
+    document.getElementById('lbList').innerHTML =
+      `<div class="lb-empty">Could not load leaderboard — please try again.</div>`;
+    return;
+  }
+  renderLeaderboard(result.scores);
+});
 document.getElementById('submitScoreBtn').addEventListener('click', submitScore);
 document.querySelectorAll('.lb-tab').forEach(btn =>
   btn.addEventListener('click', () => renderLbTab(btn.dataset.tab)));
@@ -1654,12 +1663,20 @@ document.querySelectorAll('.lb-tab').forEach(btn =>
 //
 
 async function loadLeaderboard() {
-  try {
-    const resp = await fetch(`${WORKER_URL}/scores`);
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return Array.isArray(data.scores) ? data.scores : [];
-  } catch(e) { return []; }
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const resp = await fetch(`${WORKER_URL}/scores`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      if (Array.isArray(data.scores)) return { ok: true, scores: data.scores };
+      throw new Error('Unexpected response format');
+    } catch(e) {
+      if (attempt === maxRetries) return { ok: false, error: e.message };
+      // Wait 500ms before retrying
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
 }
 
 async function submitScore() {
@@ -1798,8 +1815,13 @@ async function openLeaderboard() {
   document.getElementById('leaderboard-modal').classList.add('open');
   document.getElementById('lbList').innerHTML = '<div class="lb-empty">Loading…</div>';
   document.getElementById('lbTabDesc').textContent = '';
-  const entries = await loadLeaderboard();
-  renderLeaderboard(entries);
+  const result = await loadLeaderboard();
+  if (!result.ok) {
+    document.getElementById('lbList').innerHTML =
+      `<div class="lb-empty">Could not load leaderboard — please try refreshing.</div>`;
+    return;
+  }
+  renderLeaderboard(result.scores);
 }
 
 function closeLeaderboard() {
