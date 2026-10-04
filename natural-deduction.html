@@ -293,6 +293,7 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
               <tr><td>~  or  \neg</td><td>¬</td><td>negation</td></tr>
               <tr><td>_|_  or  \bot</td><td>⊥</td><td>falsum</td></tr>
               <tr><td>( )</td><td></td><td>grouping</td></tr>
+              <tr><td colspan="3" style="color:var(--chalk-faint);font-size:.78rem;padding-top:8px">Precedence (high→low): ¬ &gt; ∧ &gt; ∨ &gt; →. All right-associative.</td></tr>
             </table>
           </div>
         </div>
@@ -443,7 +444,11 @@ function tokenise(s) {
   return tokens;
 }
 
-// Precedence: NEG > AND > OR > IMP (right-assoc)
+// Precedence (low to high): IMP > OR > AND > NEG
+// All connectives are right-associative:
+//   A /\ B /\ C  =  A /\ (B /\ C)
+//   A \/ B \/ C  =  A \/ (B \/ C)
+//   A -> B -> C  =  A -> (B -> C)
 function parse(tokens) {
   let pos = 0;
   const peek    = () => tokens[pos];
@@ -457,12 +462,12 @@ function parse(tokens) {
   }
   function parseOr() {
     let left = parseAnd();
-    while (peek()?.t==='OR') { consume(); left={op:'OR',left,right:parseAnd()}; }
+    if (peek()?.t==='OR') { consume(); return {op:'OR',left,right:parseOr()}; }
     return left;
   }
   function parseAnd() {
     let left = parseNeg();
-    while (peek()?.t==='AND') { consume(); left={op:'AND',left,right:parseNeg()}; }
+    if (peek()?.t==='AND') { consume(); return {op:'AND',left,right:parseAnd()}; }
     return left;
   }
   function parseNeg() {
@@ -498,8 +503,14 @@ function fmtAST(ast) {
       const inner = fmtAST(ast.sub);
       return SYM.NEG + (['AND','OR','IMP'].includes(ast.sub.op) ? `(${inner})` : inner);
     }
-    case 'AND': return `${par(ast.left,['IMP','OR'])} ${SYM.AND} ${par(ast.right,['IMP','OR'])}`;
+    // AND: left needs parens if lower precedence (OR, IMP)
+    //      right needs parens if lower precedence (OR, IMP) — same AND on right is fine (right-assoc)
+    case 'AND': return `${par(ast.left,['OR','IMP'])} ${SYM.AND} ${par(ast.right,['OR','IMP'])}`;
+    // OR:  left needs parens if lower precedence (IMP)
+    //      right needs parens if lower precedence (IMP) — same OR on right is fine (right-assoc)
     case 'OR':  return `${par(ast.left,['IMP'])} ${SYM.OR} ${par(ast.right,['IMP'])}`;
+    // IMP: left needs parens if IMP (since (A→B)→C ≠ A→B→C)
+    //      right never needs parens (right-assoc)
     case 'IMP': return `${par(ast.left,['IMP'])} ${SYM.IMP} ${fmtAST(ast.right)}`;
     default: return '?';
   }
