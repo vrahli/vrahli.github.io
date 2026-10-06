@@ -684,7 +684,9 @@ function checkRuleApplicability(formulaStr, ruleId) {
   }
 }
 
-function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex) {
+// siblingFormulas: optional array of already-filled sibling premise formula strings,
+// needed for or-e to know A and B when validating premises 1 and 2.
+function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, siblingFormulas=[]) {
   const parent = tryParse(parentStr);
   const child  = tryParse(childStr);
   if (!parent) return {valid:false, reason:'Parent formula could not be parsed.'};
@@ -743,6 +745,39 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex) {
         return {valid:true, reason:`Correct — ${cf} is an implication with consequent ${pf}.`};
       }
       return {valid:true, reason:`This should be the antecedent matching premise 1.`};
+    case 'or-e': {
+      // Premise 0: must be a disjunction A ∨ B
+      if (premiseIndex===0) {
+        if (child.op!=='OR')
+          return {valid:false, reason:`∨E: premise 1 must be a disjunction A ∨ B. You wrote ${cf} (a ${opName(child.op)}). The first premise is the disjunction you are eliminating.`};
+        return {valid:true, reason:`Correct — ${cf} is a disjunction, as ∨E requires for its first premise.`};
+      }
+      // Premises 1 and 2: must be A → C and B → C respectively.
+      // We try to get A and B from sibling premise 0 if already filled.
+      const disj = tryParse(siblingFormulas[0] || '');
+      const A = disj?.op==='OR' ? disj.left  : null;
+      const B = disj?.op==='OR' ? disj.right : null;
+
+      if (premiseIndex===1) {
+        if (child.op!=='IMP')
+          return {valid:false, reason:`∨E: premise 2 must be an implication A → ${pf} where A is the left disjunct. You wrote ${cf} (a ${opName(child.op)}).`};
+        if (!astEqual(child.right, parent))
+          return {valid:false, reason:`∨E: premise 2 must have ${pf} as its consequent (since ${pf} is what we're proving). Your premise ${cf} has consequent ${fmtAST(child.right)}.`};
+        if (A && !astEqual(child.left, A))
+          return {valid:false, reason:`∨E: premise 2 must be ${fmtAST(A)} → ${pf}, where ${fmtAST(A)} is the left disjunct of premise 1 (${fmtAST(disj)}). You wrote ${cf}.`};
+        return {valid:true, reason:`Correct — ${cf} proves ${pf} from the left disjunct, as ∨E requires.`};
+      }
+      if (premiseIndex===2) {
+        if (child.op!=='IMP')
+          return {valid:false, reason:`∨E: premise 3 must be an implication B → ${pf} where B is the right disjunct. You wrote ${cf} (a ${opName(child.op)}).`};
+        if (!astEqual(child.right, parent))
+          return {valid:false, reason:`∨E: premise 3 must have ${pf} as its consequent (since ${pf} is what we're proving). Your premise ${cf} has consequent ${fmtAST(child.right)}.`};
+        if (B && !astEqual(child.left, B))
+          return {valid:false, reason:`∨E: premise 3 must be ${fmtAST(B)} → ${pf}, where ${fmtAST(B)} is the right disjunct of premise 1 (${fmtAST(disj)}). You wrote ${cf}.`};
+        return {valid:true, reason:`Correct — ${cf} proves ${pf} from the right disjunct, as ∨E requires.`};
+      }
+      return {valid:true, reason:''};
+    }
     default:
       return {valid:true, reason:''};
   }
@@ -756,7 +791,9 @@ function feedbackForRule(node, ruleId) {
 }
 
 function feedbackForPremise(parentNode, childNode, ruleId, premiseIndex) {
-  const check = checkPremiseValidity(parentNode.formula, ruleId, childNode.formula, premiseIndex);
+  // For or-e, pass sibling formulas so premises 1 and 2 can be checked against premise 0
+  const siblingFormulas = parentNode.children.map(c => c.formula || '');
+  const check = checkPremiseValidity(parentNode.formula, ruleId, childNode.formula, premiseIndex, siblingFormulas);
   if (!check.valid) { showFeedback('err','Incorrect Premise',check.reason); return false; }
   if (check.reason) showFeedback('ok','Correct Premise',check.reason);
   return true;
@@ -779,7 +816,15 @@ function computeHint(parent, idx) {
     case 'imp-e':   return idx===0 ? `? → ${f}` : `? (the antecedent matching premise 1)`;
     case 'and-e-l': return `${f} ∧ ?`;
     case 'and-e-r': return `? ∧ ${f}`;
-    case 'or-e':    return idx===0 ? '? ∨ ?' : `? → ${f}`;
+    case 'or-e': {
+      if (idx===0) return '? ∨ ?  (the disjunction A ∨ B being eliminated)';
+      const disj = tryParse(parent.children[0]?.formula || '');
+      const A = disj?.op==='OR' ? fmtAST(disj.left)  : 'A';
+      const B = disj?.op==='OR' ? fmtAST(disj.right) : 'B';
+      if (idx===1) return `${A} → ${f}  (prove ${f} from the left disjunct)`;
+      if (idx===2) return `${B} → ${f}  (prove ${f} from the right disjunct)`;
+      return null;
+    }
     case 'neg-e':   return idx===0 ? '¬?' : '? (formula negated in premise 1)';
     case 'bot-e':   return '⊥';
     default: return null;
@@ -1270,6 +1315,13 @@ function updateHypPanel() {
   const list = document.getElementById('hyp-list');
   const nums = Object.keys(hypotheses).map(Number).sort((a,b)=>a-b);
   if (nums.length===0) { list.innerHTML='<div class="hyp-empty">No hypotheses yet</div>'; return; }
+  // Auto-open the panel the first time a hypothesis is registered
+  const panel = document.getElementById('hyp-panel');
+  const btn   = document.getElementById('hypToggle');
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    btn.textContent = 'Hypotheses ◀';
+  }
   list.innerHTML='';
   nums.forEach(n => {
     const h=hypotheses[n];
