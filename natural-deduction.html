@@ -386,7 +386,9 @@ function preprocess(s) {
   s = s.replace(/\\lor\b/g,  '\\/');
   s = s.replace(/\\neg\b/g,  '~');
   s = s.replace(/\\lneg\b/g, '~');
-  s = s.replace(/\\bot\b/g,  '_|_');
+  s = s.replace(/\\not\b/g,  '~');
+  s = s.replace(/\\bot\b/g,   '_|_');
+  s = s.replace(/\\false\b/g, '_|_');
   // Unicode connectives → ASCII for uniform tokenisation
   s = s.replace(/∧/g, '/\\');
   s = s.replace(/∨/g, '\\/');
@@ -415,16 +417,18 @@ function applyLiveReplacements(s) {
     [/~/g,    '¬'],
     [/\\land(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '∧'],
     [/\\lneg(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '¬'],
+    [/\\not(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g, '¬'],
     [/\\lor(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '∨'],
     [/\\and(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '∧'],
     [/\\neg(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g, '¬'],
-    [/\\bot(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '⊥'],
+    [/\\bot(?=\s|[∧∨→¬⊥()/\\~]|$)/g,   '⊥'],
+    [/\\false(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '⊥'],
     [/\\to(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g,  '→'],
     [/\\or(?=\s|[∧∨→¬⊥()/\\~A-Za-z(]|$)/g,  '∨'],
     // Also fire when the user presses space right after the keyword
-    [/\\land\s/g, '∧ '], [/\\lneg\s/g, '¬'],
+    [/\\land\s/g, '∧ '], [/\\lneg\s/g, '¬'], [/\\not\s/g, '¬'],
     [/\\lor\s/g,  '∨ '], [/\\and\s/g,  '∧ '],
-    [/\\neg\s/g,  '¬'],  [/\\bot\s/g,  '⊥ '],
+    [/\\neg\s/g,  '¬'],  [/\\bot\s/g,  '⊥ '], [/\\false\s/g, '⊥ '],
     [/\\to\s/g,   '→ '], [/\\or\s/g,   '∨ '],
   ];
   let out = s;
@@ -1729,7 +1733,7 @@ function handleFormulaEdit(node, val) {
   const ast = tryParse(trimmed);
   if (!ast) {
     showFeedback('err','Parse Error',
-      `Could not parse \`${val}\`. Use /\\ or \\and for ∧, \\/ or \\or for ∨, -> or \\to for →, ~ or \\neg for ¬, _|_ or \\bot for ⊥.`);
+      `Could not parse \`${val}\`. Use /\\ or \\and for ∧, \\/ or \\or for ∨, -> or \\to for →, ~ or \\neg or \\not for ¬, _|_ or \\bot or \\false for ⊥.`);
     node.status='err'; renderTree(); return;
   }
   node.formula = fmtAST(ast);
@@ -2373,7 +2377,7 @@ function startProof() {
   const ast=tryParse(val);
   if (!ast) {
     showFeedback('err','Parse Error',
-      `Could not parse \`${val}\`. Use /\\ or \\and for ∧, \\/ or \\or for ∨, -> or \\to for →, ~ or \\neg for ¬, _|_ or \\bot for ⊥.`);
+      `Could not parse \`${val}\`. Use /\\ or \\and for ∧, \\/ or \\or for ∨, -> or \\to for →, ~ or \\neg or \\not for ¬, _|_ or \\bot or \\false for ⊥.`);
     return;
   }
   const formulaStr=fmtAST(ast);
