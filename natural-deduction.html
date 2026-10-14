@@ -817,6 +817,7 @@ const RULES = [
   {id:'or-e',   label:'∨-elimination',         symbol:'∨E',  premises:3, genHyp:false},
   {id:'neg-e',  label:'¬-elimination (⊥)',     symbol:'¬E',  premises:2, genHyp:false},
   {id:'bot-e',  label:'⊥-elimination (EFQ)',   symbol:'⊥E',  premises:1, genHyp:false},
+  {id:'dne',    label:'Double-negation elim.', symbol:'DNE', premises:1, genHyp:false},
   {id:'lem',      label:'LEM (Law of Excl. Middle)',  symbol:'LEM', premises:0, genHyp:false},
   {id:'forall-i', label:'∀-introduction',            symbol:'∀I',  premises:1, genHyp:false, genVar:true},
   {id:'forall-e', label:'∀-elimination',             symbol:'∀E',  premises:1, genHyp:false, genTerm:true},
@@ -950,6 +951,8 @@ function checkRuleApplicability(formulaStr, ruleId) {
       return {valid:true, reason:`¬E is right — provide ¬A and A as premises to derive ⊥.`};
     case 'bot-e':
       return {valid:true, reason:`⊥E (ex falso) lets you derive any formula from ⊥. Provide a proof of ⊥.`};
+    case 'dne':
+      return {valid:true, reason:`DNE: provide ¬¬${f} as the premise to derive ${f}.`};
     case 'lem': {
       // Valid iff the formula is A ∨ ¬A or ¬A ∨ A for some A
       if (ast.op !== 'OR')
@@ -1028,6 +1031,12 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, sibling
     case 'bot-e':
       if (child.op!=='BOT') return {valid:false, reason:`⊥E needs ⊥ as its premise. You wrote ${cf}. Provide a proof of ⊥.`};
       return {valid:true, reason:`Correct — ⊥ is what ⊥E needs.`};
+    case 'dne':
+      if (child.op!=='NEG' || child.sub.op!=='NEG')
+        return {valid:false, reason:`DNE: the premise must be ¬¬${pf}. You wrote ${cf}.`};
+      if (!alphaEq(child.sub.sub, parent))
+        return {valid:false, reason:`DNE: the premise must be ¬¬${pf}, i.e. the double negation of the conclusion. You wrote ${cf}.`};
+      return {valid:true, reason:`Correct — ¬¬${pf} gives ${pf} by double-negation elimination.`};
     case 'neg-e': {
       // Either premise can be ¬A and the other A — check both orders
       const sib = siblingFormulas[premiseIndex === 0 ? 1 : 0];
@@ -1225,6 +1234,7 @@ function computeHint(parent, idx) {
     }
     case 'neg-e':   return idx===0 ? '¬A (or A)' : 'A (or ¬A) — opposite of premise 1';
     case 'bot-e':   return '⊥';
+    case 'dne':     return `¬¬${f}`;
     default: return null;
   }
 }
