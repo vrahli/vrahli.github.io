@@ -1044,13 +1044,28 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, sibling
         return {valid:false, reason:`¬E: this premise is A = ${cf}, so the other premise must be ¬${cf}. You wrote ${fmtAST(sibAst)}.`};
       }
     }
-    case 'imp-e':
-      if (premiseIndex===0) {
-        if (child.op!=='IMP') return {valid:false, reason:`→E: premise 1 must be an implication A → ${pf}. You wrote ${cf} (a ${opName(child.op)}).`};
-        if (!astEqual(parent,child.right)) return {valid:false, reason:`→E: premise 1 must have ${pf} as its consequent. Your premise ${cf} has consequent ${fmtAST(child.right)}.`};
-        return {valid:true, reason:`Correct — ${cf} is an implication with consequent ${pf}.`};
+    case 'imp-e': {
+      // Either premise can be A→B (with B = conclusion) and the other A — accept both orders
+      const sibImp = siblingFormulas[premiseIndex === 0 ? 1 : 0];
+      const sibImpAst = sibImp ? tryParse(sibImp) : null;
+      if (child.op === 'IMP') {
+        // This premise is A→B — check consequent matches conclusion
+        if (!alphaEq(child.right, parent))
+          return {valid:false, reason:`→E: this premise is ${cf}, but its consequent ${fmtAST(child.right)} does not match the conclusion ${pf}.`};
+        // Check sibling is the antecedent A, if already filled
+        if (!sibImpAst) return {valid:true, reason:`Good — ${cf} has consequent ${pf}. Now provide ${fmtAST(child.left)} as the other premise.`};
+        if (alphaEq(sibImpAst, child.left)) return {valid:true, reason:`Correct — ${cf} and ${fmtAST(sibImpAst)} give ${pf} by →E.`};
+        return {valid:false, reason:`→E: the implication is ${cf}, so the other premise must be ${fmtAST(child.left)}, not ${fmtAST(sibImpAst)}.`};
+      } else {
+        // This premise should be A — sibling should be A→B
+        if (!sibImpAst) return {valid:true, reason:`Good — ${cf} could be the antecedent A. Now provide A → ${pf} as the other premise.`};
+        if (sibImpAst.op === 'IMP' && alphaEq(sibImpAst.right, parent) && alphaEq(sibImpAst.left, child))
+          return {valid:true, reason:`Correct — ${fmtAST(sibImpAst)} and ${cf} give ${pf} by →E.`};
+        if (sibImpAst.op === 'IMP' && alphaEq(sibImpAst.right, parent))
+          return {valid:false, reason:`→E: the implication ${fmtAST(sibImpAst)} requires antecedent ${fmtAST(sibImpAst.left)}, but you wrote ${cf}.`};
+        return {valid:false, reason:`→E: the other premise must be an implication A → ${pf}. You wrote ${fmtAST(sibImpAst)}.`};
       }
-      return {valid:true, reason:`This should be the antecedent matching premise 1.`};
+    }
     case 'forall-i':
     case 'forall-e':
     case 'exists-i':
@@ -1196,7 +1211,7 @@ function computeHint(parent, idx) {
     case 'or-i-l':  return ast.op==='OR'  ? fmtAST(ast.left)  : null;
     case 'or-i-r':  return ast.op==='OR'  ? fmtAST(ast.right) : null;
     case 'neg-i':   return idx===0 ? '⊥' : null;
-    case 'imp-e':   return idx===0 ? `? → ${f}` : `? (the antecedent matching premise 1)`;
+    case 'imp-e':   return idx===0 ? `A → ${f}  or  A (antecedent)` : `A (antecedent)  or  A → ${f}`;
     case 'and-e-l': return `${f} ∧ ?`;
     case 'and-e-r': return `? ∧ ${f}`;
     case 'or-e': {
