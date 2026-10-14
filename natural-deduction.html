@@ -109,8 +109,8 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 #hyp-panel h2{font-family:'Cinzel',serif;font-size:.9rem;color:var(--accent);letter-spacing:.06em;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .hyp-item{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .hyp-num{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);min-width:20px;font-weight:600}
-.hyp-formula{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--chalk)}
-.hyp-cancelled{color:var(--accent);opacity:.45;font-style:italic}
+.hyp-formula{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--chalk-dim)}
+.hyp-cancelled{color:var(--accent);font-weight:600;text-shadow:0 0 10px color-mix(in srgb,var(--accent) 45%,transparent)}
 .hyp-empty{color:var(--chalk-faint);font-size:.85rem;font-style:italic;text-align:center;margin-top:20px}
 
 /* FEEDBACK */
@@ -1028,12 +1028,22 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, sibling
     case 'bot-e':
       if (child.op!=='BOT') return {valid:false, reason:`⊥E needs ⊥ as its premise. You wrote ${cf}. Provide a proof of ⊥.`};
       return {valid:true, reason:`Correct — ⊥ is what ⊥E needs.`};
-    case 'neg-e':
-      if (premiseIndex===0) {
-        if (child.op!=='NEG') return {valid:false, reason:`¬E: premise 1 must be a negation ¬A. You wrote ${cf}. Provide ¬A first, then A.`};
-        return {valid:true, reason:`Good — ${cf} is a negation, correct as the first premise of ¬E.`};
+    case 'neg-e': {
+      // Either premise can be ¬A and the other A — check both orders
+      const sib = siblingFormulas[premiseIndex === 0 ? 1 : 0];
+      const sibAst = sib ? tryParse(sib) : null;
+      if (child.op === 'NEG') {
+        // This premise is ¬A — sibling should be A
+        if (!sibAst) return {valid:true, reason:`Good — ${cf} is a negation ¬A. Now provide A as the other premise.`};
+        if (alphaEq(child.sub, sibAst)) return {valid:true, reason:`Correct — ${cf} and ${fmtAST(sibAst)} are ¬A and A.`};
+        return {valid:false, reason:`¬E: this premise is ¬A = ${fmtAST(child.sub)}, but the other premise is ${fmtAST(sibAst)}, not ${fmtAST(child.sub)}. They must be A and ¬A of each other.`};
+      } else {
+        // This premise should be A — sibling should be ¬A
+        if (!sibAst) return {valid:true, reason:`Good — ${cf} is a formula A. Now provide ¬A as the other premise.`};
+        if (sibAst.op === 'NEG' && alphaEq(sibAst.sub, child)) return {valid:true, reason:`Correct — ${fmtAST(sibAst)} and ${cf} are ¬A and A.`};
+        return {valid:false, reason:`¬E: this premise is A = ${cf}, so the other premise must be ¬${cf}. You wrote ${fmtAST(sibAst)}.`};
       }
-      return {valid:true, reason:`Make sure this matches the formula negated in premise 1.`};
+    }
     case 'imp-e':
       if (premiseIndex===0) {
         if (child.op!=='IMP') return {valid:false, reason:`→E: premise 1 must be an implication A → ${pf}. You wrote ${cf} (a ${opName(child.op)}).`};
@@ -1198,7 +1208,7 @@ function computeHint(parent, idx) {
       if (idx===2) return `${B} → ${f}  (prove ${f} from the right disjunct)`;
       return null;
     }
-    case 'neg-e':   return idx===0 ? '¬?' : '? (formula negated in premise 1)';
+    case 'neg-e':   return idx===0 ? '¬A (or A)' : 'A (or ¬A) — opposite of premise 1';
     case 'bot-e':   return '⊥';
     default: return null;
   }
