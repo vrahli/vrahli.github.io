@@ -110,7 +110,7 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .hyp-item{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .hyp-num{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);min-width:20px;font-weight:600}
 .hyp-formula{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--chalk)}
-.hyp-cancelled{text-decoration:line-through;color:var(--chalk-faint)}
+.hyp-cancelled{color:var(--accent);opacity:.45;font-style:italic}
 .hyp-empty{color:var(--chalk-faint);font-size:.85rem;font-style:italic;text-align:center;margin-top:20px}
 
 /* FEEDBACK */
@@ -265,8 +265,8 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
         <div id="start-panel">
           <h2>Begin Your Proof</h2>
           <div class="name-input-row">
-            <label class="name-label" for="studentName">Your name:</label>
-            <input class="name-input" id="studentName" type="text" placeholder="Enter your name…" maxlength="30" autocomplete="off" spellcheck="false"/>
+            <label class="name-label" for="studentName">Nickname:</label>
+            <input class="name-input" id="studentName" type="text" placeholder="e.g. alice42  (not your real name)" maxlength="10" autocomplete="off" spellcheck="false"/>
           </div>
           <div id="nameError" class="name-error"></div>
           <p>Enter the formula you wish to prove. The tree grows upward from this root.</p>
@@ -293,7 +293,10 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
               <tr><td>~  or  \neg</td><td>¬</td><td>negation</td></tr>
               <tr><td>_|_  or  \bot</td><td>⊥</td><td>falsum</td></tr>
               <tr><td>( )</td><td></td><td>grouping</td></tr>
-              <tr><td colspan="3" style="color:var(--chalk-faint);font-size:.78rem;padding-top:8px">Precedence (high→low): ¬ &gt; ∧ &gt; ∨ &gt; →. All right-associative.</td></tr>
+              <tr><td>\forall x. P  or  \all x. P</td><td>∀</td><td>universal</td></tr>
+              <tr><td>\exists x. P  or  \ex x. P</td><td>∃</td><td>existential</td></tr>
+              <tr><td>P(x,y)  f(x)</td><td></td><td>predicates &amp; functions</td></tr>
+              <tr><td colspan="3" style="color:var(--chalk-faint);font-size:.78rem;padding-top:8px">Precedence (high→low): ¬ &gt; ∧ &gt; ∨ &gt; → &gt; ∀ ∃. All right-associative. Quantifier scope extends as far right as possible.</td></tr>
             </table>
           </div>
         </div>
@@ -307,9 +310,15 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
   </div>
 </div>
 
-<footer style="text-align:center;padding:10px 20px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--chalk-faint);border-top:1px solid var(--line);position:relative;z-index:1">
+<footer style="text-align:center;padding:10px 20px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--chalk-faint);border-top:1px solid var(--line);position:relative;z-index:1;line-height:1.8">
   Built with <a href="https://claude.ai" target="_blank" style="color:var(--chalk-faint);text-decoration:underline">Claude</a> (Anthropic) &nbsp;·&nbsp;
   <a href="https://github.com/vrahli/vrahli.github.io" target="_blank" style="color:var(--chalk-faint);text-decoration:underline">Source on GitHub</a>
+  <br>
+  <span style="opacity:.7">
+    This tool stores your chosen nickname and proof scores on a leaderboard for educational purposes.
+    Please do not enter your real name. Data is held only for the duration of the course and can be
+    deleted on request — contact your instructor.
+  </span>
 </footer>
 
 <canvas id="fireworks-canvas"></canvas>
@@ -366,6 +375,10 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 // ═══════════════════════════════════════════
 
 function preprocess(s) {
+  s = s.replace(/\\forall\b/g, '∀');
+  s = s.replace(/\\all\b/g,    '∀');
+  s = s.replace(/\\exists\b/g, '∃');
+  s = s.replace(/\\ex\b/g,     '∃');
   s = s.replace(/\\to\b/g,   '->');
   s = s.replace(/\\and\b/g,  '/\\');
   s = s.replace(/\\land\b/g, '/\\');
@@ -374,11 +387,13 @@ function preprocess(s) {
   s = s.replace(/\\neg\b/g,  '~');
   s = s.replace(/\\lneg\b/g, '~');
   s = s.replace(/\\bot\b/g,  '_|_');
+  // Unicode connectives → ASCII for uniform tokenisation
   s = s.replace(/∧/g, '/\\');
   s = s.replace(/∨/g, '\\/');
   s = s.replace(/→/g, '->');
   s = s.replace(/¬/g, '~');
   s = s.replace(/⊥/g, '_|_');
+  // Keep ∀ ∃ as-is — tokeniser handles them directly
   return s;
 }
 
@@ -388,6 +403,16 @@ function preprocess(s) {
 function applyLiveReplacements(s) {
   // Order matters: longer sequences first so \land doesn't match as \l + and
   const rules = [
+    [/\\forall(?=\s|[∧∨→¬⊥∀∃()/\\~]|$)/g, '∀'],
+    [/\\all(?=\s|[∧∨→¬⊥∀∃()/\\~]|$)/g,    '∀'],
+    [/\\exists(?=\s|[∧∨→¬⊥∀∃()/\\~]|$)/g, '∃'],
+    [/\\ex(?=\s|[∧∨→¬⊥∀∃()/\\~]|$)/g,     '∃'],
+    [/\\forall\s/g, '∀ '], [/\\all\s/g,    '∀ '],
+    [/\\exists\s/g, '∃ '], [/\\ex\s/g,     '∃ '],
+    [/\/\\/g, '∧'],
+    [/\\\//g, '∨'],
+    [/->/g,   '→'],
+    [/~/g,    '¬'],
     [/\\land(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '∧'],
     [/\\lneg(?=\s|[∧∨→¬⊥()/\\~]|$)/g, '¬'],
     [/\\lor(?=\s|[∧∨→¬⊥()/\\~]|$)/g,  '∨'],
@@ -430,6 +455,10 @@ function tokenise(s) {
     if (/\s/.test(s[i]))             { i++; continue; }
     if (s[i] === '(')                { tokens.push({t:'LPAREN'}); i++; }
     else if (s[i] === ')')           { tokens.push({t:'RPAREN'}); i++; }
+    else if (s[i] === ',')           { tokens.push({t:'COMMA'});  i++; }
+    else if (s[i] === '.')           { tokens.push({t:'DOT'});    i++; }
+    else if (s[i] === '∀')           { tokens.push({t:'FORALL'}); i++; }
+    else if (s[i] === '∃')           { tokens.push({t:'EXISTS'}); i++; }
     else if (s.slice(i,i+2)==='/\\') { tokens.push({t:'AND'}); i+=2; }
     else if (s.slice(i,i+2)==='\\/'){ tokens.push({t:'OR'});  i+=2; }
     else if (s.slice(i,i+2)==='->') { tokens.push({t:'IMP'}); i+=2; }
@@ -438,35 +467,55 @@ function tokenise(s) {
     else if (/[A-Za-z_]/.test(s[i])) {
       let name='';
       while (i<s.length && /[A-Za-z0-9_']/.test(s[i])) name+=s[i++];
-      tokens.push({t:'ATOM',v:name});
+      tokens.push({t:'NAME',v:name});
     } else { i++; }
   }
   return tokens;
 }
 
-// Precedence (low to high): IMP > OR > AND > NEG
-// All connectives are right-associative:
-//   A /\ B /\ C  =  A /\ (B /\ C)
-//   A \/ B \/ C  =  A \/ (B \/ C)
-//   A -> B -> C  =  A -> (B -> C)
+// Precedence (low to high): QUANT > IMP > OR > AND > NEG > atom/paren
+// All binary connectives are right-associative.
+// Quantifier scope extends as far right as possible:
+//   ∀x. P ∧ Q  means  ∀x. (P ∧ Q)
 function parse(tokens) {
   let pos = 0;
   const peek    = () => tokens[pos];
   const consume = () => tokens[pos++];
   const expect  = t => { if (peek()?.t!==t) throw new Error('Expected '+t); return consume(); };
 
+  // Formula parsers
+  function parseFormula() {
+    // Quantifiers at lowest precedence
+    if (peek()?.t==='FORALL') {
+      consume();
+      const v = peek(); if (v?.t!=='NAME') throw new Error('Expected variable after ∀');
+      consume();
+      expect('DOT');
+      const body = parseFormula();
+      return {op:'FORALL', var:v.v, body};
+    }
+    if (peek()?.t==='EXISTS') {
+      consume();
+      const v = peek(); if (v?.t!=='NAME') throw new Error('Expected variable after ∃');
+      consume();
+      expect('DOT');
+      const body = parseFormula();
+      return {op:'EXISTS', var:v.v, body};
+    }
+    return parseImp();
+  }
   function parseImp() {
-    let left = parseOr();
+    const left = parseOr();
     if (peek()?.t==='IMP') { consume(); return {op:'IMP',left,right:parseImp()}; }
     return left;
   }
   function parseOr() {
-    let left = parseAnd();
+    const left = parseAnd();
     if (peek()?.t==='OR') { consume(); return {op:'OR',left,right:parseOr()}; }
     return left;
   }
   function parseAnd() {
-    let left = parseNeg();
+    const left = parseNeg();
     if (peek()?.t==='AND') { consume(); return {op:'AND',left,right:parseAnd()}; }
     return left;
   }
@@ -477,12 +526,64 @@ function parse(tokens) {
   function parseAtom() {
     const tk = peek();
     if (!tk) throw new Error('Unexpected end');
-    if (tk.t==='BOT')    { consume(); return {op:'BOT'}; }
-    if (tk.t==='ATOM')   { consume(); return {op:'ATOM',v:tk.v}; }
-    if (tk.t==='LPAREN') { consume(); const e=parseImp(); expect('RPAREN'); return e; }
+    if (tk.t==='BOT') { consume(); return {op:'BOT'}; }
+    if (tk.t==='LPAREN') {
+      consume();
+      const e = parseFormula(); // allow quantifiers inside parens
+      expect('RPAREN');
+      return e;
+    }
+    // Quantifiers can appear without parentheses in any atom position
+    // (e.g. on the right side of → where fmtAST emits no parens)
+    if (tk.t==='FORALL') {
+      consume();
+      const v = peek(); if (v?.t!=='NAME') throw new Error('Expected variable after ∀');
+      consume(); expect('DOT');
+      return {op:'FORALL', var:v.v, body:parseFormula()};
+    }
+    if (tk.t==='EXISTS') {
+      consume();
+      const v = peek(); if (v?.t!=='NAME') throw new Error('Expected variable after ∃');
+      consume(); expect('DOT');
+      return {op:'EXISTS', var:v.v, body:parseFormula()};
+    }
+    if (tk.t==='NAME') {
+      consume();
+      // Check for argument list: NAME ( term, term, ... )
+      if (peek()?.t==='LPAREN') {
+        consume();
+        const args = [];
+        if (peek()?.t!=='RPAREN') {
+          args.push(parseTerm());
+          while (peek()?.t==='COMMA') { consume(); args.push(parseTerm()); }
+        }
+        expect('RPAREN');
+        return {op:'ATOM', name:tk.v, args};
+      }
+      return {op:'ATOM', name:tk.v, args:[]};
+    }
     throw new Error('Unexpected token: '+tk.t);
   }
-  const result = parseImp();
+
+  // Term parsers (recursive: f(g(x), y))
+  function parseTerm() {
+    const tk = peek();
+    if (!tk || tk.t!=='NAME') throw new Error('Expected term');
+    consume();
+    if (peek()?.t==='LPAREN') {
+      consume();
+      const args = [];
+      if (peek()?.t!=='RPAREN') {
+        args.push(parseTerm());
+        while (peek()?.t==='COMMA') { consume(); args.push(parseTerm()); }
+      }
+      expect('RPAREN');
+      return {op:'FUN', name:tk.v, args};
+    }
+    return {op:'VAR', name:tk.v};
+  }
+
+  const result = parseFormula();
   if (pos < tokens.length) throw new Error('Extra tokens');
   return result;
 }
@@ -492,39 +593,212 @@ function tryParse(s) {
   try { return parse(tokenise(s)); } catch(e) { return null; }
 }
 
-const SYM = {AND:'∧',OR:'∨',IMP:'→',NEG:'¬',BOT:'⊥'};
+const SYM = {AND:'∧',OR:'∨',IMP:'→',NEG:'¬',BOT:'⊥',FORALL:'∀',EXISTS:'∃'};
+
+// Format a term
+function fmtTerm(t) {
+  if (!t) return '?';
+  if (t.op==='VAR') return t.name;
+  if (t.op==='FUN') return t.args.length===0 ? t.name : `${t.name}(${t.args.map(fmtTerm).join(', ')})`;
+  return '?';
+}
+
+// Quantifiers need parens when they appear as children of AND/OR/IMP/NEG
+const NEEDS_PAREN_OPS = ['AND','OR','IMP','NEG','FORALL','EXISTS'];
 
 function fmtAST(ast) {
   if (!ast) return '?';
   switch(ast.op) {
-    case 'ATOM': return ast.v;
+    case 'ATOM': {
+      if (ast.args.length===0) return ast.name;
+      return `${ast.name}(${ast.args.map(fmtTerm).join(', ')})`;
+    }
     case 'BOT':  return '⊥';
     case 'NEG': {
       const inner = fmtAST(ast.sub);
-      return SYM.NEG + (['AND','OR','IMP'].includes(ast.sub.op) ? `(${inner})` : inner);
+      const needP = ['AND','OR','IMP','FORALL','EXISTS'].includes(ast.sub.op);
+      return SYM.NEG + (needP ? `(${inner})` : inner);
     }
-    // AND: left needs parens if lower precedence (OR, IMP)
-    //      right needs parens if lower precedence (OR, IMP) — same AND on right is fine (right-assoc)
-    case 'AND': return `${par(ast.left,['OR','IMP'])} ${SYM.AND} ${par(ast.right,['OR','IMP'])}`;
-    // OR:  left needs parens if lower precedence (IMP)
-    //      right needs parens if lower precedence (IMP) — same OR on right is fine (right-assoc)
-    case 'OR':  return `${par(ast.left,['IMP'])} ${SYM.OR} ${par(ast.right,['IMP'])}`;
-    // IMP: left needs parens if IMP (since (A→B)→C ≠ A→B→C)
-    //      right never needs parens (right-assoc)
-    case 'IMP': return `${par(ast.left,['IMP'])} ${SYM.IMP} ${fmtAST(ast.right)}`;
+    case 'AND': return `${par(ast.left,['OR','IMP','FORALL','EXISTS'])} ${SYM.AND} ${par(ast.right,['OR','IMP','FORALL','EXISTS'])}`;
+    case 'OR':  return `${par(ast.left,['IMP','FORALL','EXISTS'])} ${SYM.OR} ${par(ast.right,['IMP','FORALL','EXISTS'])}`;
+    case 'IMP': return `${par(ast.left,['IMP','FORALL','EXISTS'])} ${SYM.IMP} ${fmtAST(ast.right)}`;
+    case 'FORALL': return `∀${ast.var}. ${fmtAST(ast.body)}`;
+    case 'EXISTS': return `∃${ast.var}. ${fmtAST(ast.body)}`;
     default: return '?';
   }
 }
-function par(ast,ops) { const s=fmtAST(ast); return ops.includes(ast.op)?`(${s})`:s; }
+function par(ast, ops) {
+  const s = fmtAST(ast);
+  return ops.includes(ast.op) ? `(${s})` : s;
+}
 
 function renderFormula(s) { const a=tryParse(s); return a?fmtAST(a):s; }
 
+// Syntactic equality (no alpha-renaming)
+function termEqual(a,b) {
+  if (!a||!b||a.op!==b.op) return false;
+  if (a.op==='VAR') return a.name===b.name;
+  if (a.op==='FUN') return a.name===b.name && a.args.length===b.args.length && a.args.every((x,i)=>termEqual(x,b.args[i]));
+  return false;
+}
 function astEqual(a,b) {
   if (!a||!b||a.op!==b.op) return false;
-  if (a.op==='ATOM') return a.v===b.v;
+  if (a.op==='ATOM') return a.name===b.name && a.args.length===b.args.length && a.args.every((x,i)=>termEqual(x,b.args[i]));
   if (a.op==='BOT')  return true;
   if (a.op==='NEG')  return astEqual(a.sub,b.sub);
+  if (a.op==='FORALL'||a.op==='EXISTS') return a.var===b.var && astEqual(a.body,b.body);
   return astEqual(a.left,b.left)&&astEqual(a.right,b.right);
+}
+
+// ── Free variables ─────────────────────────────────────────────────────────
+
+function freeVarsTerm(t, out=new Set()) {
+  if (!t) return out;
+  if (t.op==='VAR') { out.add(t.name); return out; }
+  if (t.op==='FUN') { t.args.forEach(a=>freeVarsTerm(a,out)); return out; }
+  return out;
+}
+
+function freeVars(ast, out=new Set()) {
+  if (!ast) return out;
+  switch(ast.op) {
+    case 'ATOM': ast.args.forEach(a=>freeVarsTerm(a,out)); break;
+    case 'BOT':  break;
+    case 'NEG':  freeVars(ast.sub,out); break;
+    case 'AND': case 'OR': case 'IMP':
+      freeVars(ast.left,out); freeVars(ast.right,out); break;
+    case 'FORALL': case 'EXISTS': {
+      const inner = new Set();
+      freeVars(ast.body,inner);
+      inner.forEach(v=>{ if(v!==ast.var) out.add(v); });
+      break;
+    }
+  }
+  return out;
+}
+
+function freeVarsTermSet(t) { return freeVarsTerm(t, new Set()); }
+
+// ── Fresh variable generation ──────────────────────────────────────────────
+
+// Collect ALL variable/name occurrences in a term (free and bound)
+function allNamesTerm(t, out=new Set()) {
+  if (!t) return out;
+  if (t.op==='VAR') { out.add(t.name); return out; }
+  if (t.op==='FUN') { out.add(t.name); t.args.forEach(a=>allNamesTerm(a,out)); return out; }
+  return out;
+}
+function allNamesAST(ast, out=new Set()) {
+  if (!ast) return out;
+  switch(ast.op) {
+    case 'ATOM': out.add(ast.name); ast.args.forEach(a=>allNamesTerm(a,out)); break;
+    case 'BOT':  break;
+    case 'NEG':  allNamesAST(ast.sub,out); break;
+    case 'AND': case 'OR': case 'IMP':
+      allNamesAST(ast.left,out); allNamesAST(ast.right,out); break;
+    case 'FORALL': case 'EXISTS':
+      out.add(ast.var); allNamesAST(ast.body,out); break;
+  }
+  return out;
+}
+
+let freshCounter = 0;
+function freshVar(avoid) {
+  const bases = ['w','u','v','s','t','r','p','q'];
+  for (const b of bases) {
+    if (!avoid.has(b)) return b;
+  }
+  while (true) {
+    const name = 'w' + (++freshCounter);
+    if (!avoid.has(name)) return name;
+  }
+}
+
+// ── Capture-avoiding substitution: formula[x ↦ term] ─────────────────────
+
+function substTerm(t, x, replacement) {
+  if (!t) return t;
+  if (t.op==='VAR') return t.name===x ? replacement : t;
+  if (t.op==='FUN') return {op:'FUN', name:t.name, args:t.args.map(a=>substTerm(a,x,replacement))};
+  return t;
+}
+
+function subst(ast, x, term) {
+  // term is a term-AST (VAR or FUN node)
+  if (!ast) return ast;
+  switch(ast.op) {
+    case 'ATOM': return {op:'ATOM', name:ast.name, args:ast.args.map(a=>substTerm(a,x,term))};
+    case 'BOT':  return ast;
+    case 'NEG':  return {op:'NEG', sub:subst(ast.sub,x,term)};
+    case 'AND':  return {op:'AND', left:subst(ast.left,x,term), right:subst(ast.right,x,term)};
+    case 'OR':   return {op:'OR',  left:subst(ast.left,x,term), right:subst(ast.right,x,term)};
+    case 'IMP':  return {op:'IMP', left:subst(ast.left,x,term), right:subst(ast.right,x,term)};
+    case 'FORALL': case 'EXISTS': {
+      const Q = ast.op;
+      const y = ast.var;
+      // x is bound here — no free occurrences of x inside
+      if (y===x) return ast;
+      const termFV = freeVarsTermSet(term);
+      if (!termFV.has(y)) {
+        // Safe: y does not appear free in term, no capture possible
+        return {op:Q, var:y, body:subst(ast.body,x,term)};
+      }
+      // Capture would occur: rename y to a fresh variable first
+      const avoid = new Set([...allNamesAST(ast.body), ...termFV, x, y]);
+      const fresh = freshVar(avoid);
+      const renamedBody = subst(ast.body, y, {op:'VAR',name:fresh});
+      return {op:Q, var:fresh, body:subst(renamedBody,x,term)};
+    }
+  }
+}
+
+// ── Alpha-equivalence ──────────────────────────────────────────────────────
+
+function alphaEqTerm(a,b) {
+  if (!a||!b||a.op!==b.op) return false;
+  if (a.op==='VAR') return a.name===b.name;
+  if (a.op==='FUN') return a.name===b.name && a.args.length===b.args.length && a.args.every((x,i)=>alphaEqTerm(x,b.args[i]));
+  return false;
+}
+
+function alphaEq(a, b, env=new Map()) {
+  // env maps variable names from a to corresponding names in b
+  if (!a||!b) return false;
+  if (a.op!==b.op) return false;
+  switch(a.op) {
+    case 'BOT':  return true;
+    case 'ATOM':
+      if (a.name!==b.name || a.args.length!==b.args.length) return false;
+      return a.args.every((t,i)=>alphaEqTermEnv(t,b.args[i],env));
+    case 'NEG':  return alphaEq(a.sub,b.sub,env);
+    case 'AND': case 'OR': case 'IMP':
+      return alphaEq(a.left,b.left,env)&&alphaEq(a.right,b.right,env);
+    case 'FORALL': case 'EXISTS': {
+      // Rename both bound vars to a fresh name and compare bodies
+      const avoid = new Set([...env.keys(),...env.values(),...allNamesAST(a),...allNamesAST(b)]);
+      const fresh = freshVar(avoid);
+      const newEnv = new Map(env);
+      newEnv.set(a.var, fresh);
+      // In b, the bound variable is b.var — map it too
+      const newEnvB = new Map();
+      // We'll do a symmetric check: substitute a.var→fresh in a's body, b.var→fresh in b's body
+      const aBody = subst(a.body, a.var, {op:'VAR',name:fresh});
+      const bBody = subst(b.body, b.var, {op:'VAR',name:fresh});
+      return alphaEq(aBody, bBody, new Map());
+    }
+  }
+  return false;
+}
+
+function alphaEqTermEnv(a,b,env) {
+  if (!a||!b||a.op!==b.op) return false;
+  if (a.op==='VAR') {
+    // If a.name is bound (in env), it must correspond to b.name via the same binding
+    if (env.has(a.name)) return env.get(a.name)===b.name;
+    return a.name===b.name;
+  }
+  if (a.op==='FUN') return a.name===b.name && a.args.length===b.args.length && a.args.every((x,i)=>alphaEqTermEnv(x,b.args[i],env));
+  return false;
 }
 
 // ═══════════════════════════════════════════
@@ -543,8 +817,12 @@ const RULES = [
   {id:'or-e',   label:'∨-elimination',         symbol:'∨E',  premises:3, genHyp:false},
   {id:'neg-e',  label:'¬-elimination (⊥)',     symbol:'¬E',  premises:2, genHyp:false},
   {id:'bot-e',  label:'⊥-elimination (EFQ)',   symbol:'⊥E',  premises:1, genHyp:false},
-  {id:'lem',    label:'LEM (Law of Excl. Middle)',symbol:'LEM', premises:0, genHyp:false},
-  {id:'cancel', label:'Cancel hypothesis',     symbol:'[n]', premises:0, genHyp:false},
+  {id:'lem',      label:'LEM (Law of Excl. Middle)',  symbol:'LEM', premises:0, genHyp:false},
+  {id:'forall-i', label:'∀-introduction',            symbol:'∀I',  premises:1, genHyp:false, genVar:true},
+  {id:'forall-e', label:'∀-elimination',             symbol:'∀E',  premises:1, genHyp:false, genTerm:true},
+  {id:'exists-i', label:'∃-introduction',            symbol:'∃I',  premises:1, genHyp:false, genTerm:true},
+  {id:'exists-e', label:'∃-elimination',             symbol:'∃E',  premises:2, genHyp:true,  genVar:true},
+  {id:'cancel',   label:'Cancel hypothesis',         symbol:'[n]', premises:0, genHyp:false},
 ];
 const ruleById = id => RULES.find(r=>r.id===id);
 
@@ -579,9 +857,9 @@ const BLOCKED_WORDS = [
 function sanitiseName(raw) {
   const trimmed = raw.trim();
   if (!trimmed) return { ok:false, error:'Please enter your name before starting.' };
-  if (trimmed.length > 30) return { ok:false, error:'Name must be 30 characters or fewer.' };
-  if (!/^[\p{L}\p{N} '\-_.]+$/u.test(trimmed))
-    return { ok:false, error:"Name may only contain letters, digits, spaces, hyphens, apostrophes, underscores, and dots." };
+  if (trimmed.length > 10) return { ok:false, error:'Name must be 10 characters or fewer.' };
+  if (!/^[\p{L}]+$/u.test(trimmed))
+    return { ok:false, error:'Nickname may only contain letters.' };
   const lower = trimmed.toLowerCase();
   for (const w of BLOCKED_WORDS) {
     if (lower.includes(w)) return { ok:false, error:'Please choose an appropriate name.' };
@@ -608,7 +886,12 @@ function newNode(formula) {
   return {
     id:nodeIdCounter++, formula:formula||'', rule:null, children:[],
     status:null, hypNum:null, hypFormula:null, cancelNum:null,
-    isOpen:!formula, isHypLeaf:false
+    isOpen:!formula, isHypLeaf:false,
+    forallVar:null, forallVarError:null,
+    forallETerm:null, forallETermError:null,
+    existsITerm:null, existsITermError:null,
+    existsEVar:null, existsEVarError:null,
+    existsEHypFormula:null
   };
 }
 
@@ -677,6 +960,19 @@ function checkRuleApplicability(formulaStr, ruleId) {
         return {valid:false, reason:`LEM requires the formula to be A ∨ ¬A — one disjunct must be exactly the negation of the other. Your formula is ${f}, but ${fmtAST(ast.left)} and ${fmtAST(ast.right)} are not a formula/negation pair.`};
       return {valid:true, reason:`LEM is exactly right here. ${f} is an instance of the law of excluded middle and needs no premises — it is a classical axiom.`};
     }
+    case 'forall-i':
+      if (ast.op!=='FORALL')
+        return {valid:false, reason:`∀I can only be used when the formula you are proving is a universal ∀x. P. Your formula ${f} is a ${opName(ast.op)}, not a universal.`};
+      return {valid:true, reason:`∀I is correct. Choose a variable y, check it does not occur free in ∀${ast.var}. ${fmtAST(ast.body)} or in any active hypothesis, then prove ${fmtAST(ast.body)}[${ast.var}↦y] as the premise.`};
+    case 'forall-e':
+      return {valid:true, reason:`∀E is valid. Provide the term t to instantiate with, then give ∀x. P as the premise such that P[x↦t] is your conclusion ${f}.`};
+    case 'exists-i':
+      if (ast.op!=='EXISTS')
+        return {valid:false, reason:`∃I can only be used when the formula you are proving is an existential ∃x. P. Your formula ${f} is a ${opName(ast.op)}, not an existential.`};
+      return {valid:true, reason:`∃I is correct. Choose a term t, then prove ${fmtAST(ast.body)}[${ast.var}↦t] as the premise.`};
+    case 'exists-e':
+      // ∃E can eliminate any existential to prove any formula C
+      return {valid:true, reason:`∃E is valid. Pick a fresh variable y, introduce P[x↦y] as a hypothesis, then provide ∃x. P as premise 1 and ${f} again as premise 2 (proved under the hypothesis).`};
     case 'cancel':
       return {valid:true, reason:`Enter the hypothesis number to cancel. The formula here must match the hypothesis exactly.`};
     default:
@@ -745,6 +1041,12 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, sibling
         return {valid:true, reason:`Correct — ${cf} is an implication with consequent ${pf}.`};
       }
       return {valid:true, reason:`This should be the antecedent matching premise 1.`};
+    case 'forall-i':
+    case 'forall-e':
+    case 'exists-i':
+    case 'exists-e':
+      // Handled separately in feedbackForPremise
+      return {valid:true, reason:''};
     case 'or-e': {
       // Premise 0: must be a disjunction A ∨ B
       if (premiseIndex===0) {
@@ -791,7 +1093,55 @@ function feedbackForRule(node, ruleId) {
 }
 
 function feedbackForPremise(parentNode, childNode, ruleId, premiseIndex) {
-  // For or-e, pass sibling formulas so premises 1 and 2 can be checked against premise 0
+  // ∃E: premise 0 is ∃x.P, premise 1 is C
+  if (ruleId === 'exists-e') {
+    const check = premiseIndex===0
+      ? checkExistsEPremise0(parentNode, childNode.formula)
+      : checkExistsEPremise1(parentNode, childNode.formula);
+    if (!check.valid) { showFeedback('err','Incorrect Premise',check.reason); return false; }
+    if (check.reason) showFeedback('ok','Correct Premise',check.reason);
+    return true;
+  }
+  // ∃I has its own dedicated check using the witness term t
+  if (ruleId === 'exists-i') {
+    if (!parentNode.existsITerm) {
+      showFeedback('info', 'Enter term first',
+        'Please fill in the witness term t in the ∃I term field before entering the premise.');
+      return false;
+    }
+    const check = checkExistsIPremise(parentNode, childNode.formula);
+    parentNode.status = check.valid ? 'ok' : 'warn';
+    if (!check.valid) { showFeedback('err', 'Incorrect Premise', check.reason); return false; }
+    showFeedback('ok', 'Correct — ∃I complete', check.reason);
+    return true;
+  }
+  // ∀E has its own dedicated check using the term t
+  if (ruleId === 'forall-e') {
+    if (!parentNode.forallETerm) {
+      showFeedback('info', 'Enter term first',
+        'Please fill in the term t in the ∀E term field before entering the premise.');
+      return false;
+    }
+    const check = checkForallEPremise(parentNode, childNode.formula);
+    // Parent node is green only when the premise is correct
+    parentNode.status = check.valid ? 'ok' : 'warn';
+    if (!check.valid) { showFeedback('err', 'Incorrect Premise', check.reason); return false; }
+    showFeedback('ok', 'Correct — ∀E complete', check.reason);
+    return true;
+  }
+  // ∀I has its own dedicated check that uses the chosen variable y
+  if (ruleId === 'forall-i') {
+    if (!parentNode.forallVar) {
+      showFeedback('info', 'Enter variable first',
+        'Please fill in the variable y in the ∀I variable field before entering the premise.');
+      return false;
+    }
+    const check = checkForallIPremise(parentNode, childNode.formula);
+    if (!check.valid) { showFeedback('err', 'Incorrect Premise', check.reason); return false; }
+    if (check.reason) showFeedback('ok', 'Correct Premise', check.reason);
+    return true;
+  }
+  // All other rules
   const siblingFormulas = parentNode.children.map(c => c.formula || '');
   const check = checkPremiseValidity(parentNode.formula, ruleId, childNode.formula, premiseIndex, siblingFormulas);
   if (!check.valid) { showFeedback('err','Incorrect Premise',check.reason); return false; }
@@ -808,6 +1158,29 @@ function computeHint(parent, idx) {
   if (!ast) return null;
   const f = fmtAST(ast);
   switch(parent.rule) {
+    case 'exists-e': {
+      if (idx===0) return '∃x. P  (the existential being eliminated)';
+      if (idx===1) return `${f}  (the conclusion, proved under hypothesis P[x↦y])`;
+      return null;
+    }
+    case 'exists-i': {
+      if (idx!==0 || ast.op!=='EXISTS') return null;
+      if (!parent.existsITerm) return `${fmtAST(ast.body)}[${ast.var}↦t]  (fill in t first)`;
+      const term = parseTerm(parent.existsITerm);
+      return term ? fmtAST(subst(ast.body, ast.var, term)) : `${fmtAST(ast.body)}[${ast.var}↦t]  (fill in a valid term t first)`;
+    }
+    case 'forall-e': {
+      if (idx!==0) return null;
+      if (!parent.forallETerm) return `∀x. P  such that P[x↦t] = ${f}  (fill in t first)`;
+      const term = parseTerm(parent.forallETerm);
+      return term ? `∀x. P  such that P[x↦${fmtTerm(term)}] = ${f}` : `∀x. P  (fill in a valid term t first)`;
+    }
+    case 'forall-i': {
+      if (idx!==0 || ast.op!=='FORALL') return null;
+      if (!parent.forallVar) return `${fmtAST(ast.body)} with free occurrences of ${ast.var} replaced by y (fill in y first)`;
+      const expected = subst(ast.body, ast.var, {op:'VAR', name:parent.forallVar});
+      return fmtAST(expected);
+    }
     case 'imp-i':   return (idx===0 && ast.op==='IMP') ? fmtAST(ast.right) : null;
     case 'and-i':   return ast.op==='AND' ? (idx===0 ? fmtAST(ast.left) : fmtAST(ast.right)) : null;
     case 'or-i-l':  return ast.op==='OR'  ? fmtAST(ast.left)  : null;
@@ -1010,6 +1383,156 @@ function buildNodeCard(node, isRoot) {
     card.appendChild(sec);
   }
 
+  // ∀I variable section
+  if (node.rule==='forall-i' && node.children.length > 0) {
+    const sec = document.createElement('div'); sec.className='node-section';
+    const slbl = document.createElement('div');
+    slbl.className='node-section-label'; slbl.textContent='∀-INTRODUCTION VARIABLE';
+    sec.appendChild(slbl);
+    const row = document.createElement('div'); row.className='node-hyp-row';
+    const lbl = document.createElement('label'); lbl.textContent='y =';
+    const vInp = document.createElement('input');
+    vInp.type='text'; vInp.className='node-formula-input'; vInp.style.width='60px';
+    vInp.value=node.forallVar||''; vInp.placeholder='y';
+    vInp.title='The variable y replacing x in the premise P[x↦y]';
+    vInp.autocomplete='off'; vInp.spellcheck=false;
+    vInp.addEventListener('change', () => handleForallVar(node, vInp.value.trim()));
+    vInp.addEventListener('keydown', e => { if(e.key==='Enter') handleForallVar(node, vInp.value.trim()); });
+    attachLiveRender(vInp);
+    row.appendChild(lbl); row.appendChild(vInp);
+    sec.appendChild(row);
+    // Status message for the variable check
+    if (node.forallVarError) {
+      const errEl = document.createElement('div');
+      errEl.style.cssText='font-family:JetBrains Mono,monospace;font-size:.65rem;color:var(--red);margin-top:4px;line-height:1.4';
+      errEl.textContent = node.forallVarError;
+      sec.appendChild(errEl);
+    }
+    card.appendChild(sec);
+  }
+
+  // ∀E term section
+  if (node.rule==='forall-e' && node.children.length > 0) {
+    const sec = document.createElement('div'); sec.className='node-section';
+    const slbl = document.createElement('div');
+    slbl.className='node-section-label'; slbl.textContent='∀-ELIMINATION TERM';
+    sec.appendChild(slbl);
+    const row = document.createElement('div'); row.className='node-hyp-row';
+    const lbl = document.createElement('label'); lbl.textContent='t =';
+    const tInp = document.createElement('input');
+    tInp.type='text'; tInp.className='node-formula-input'; tInp.style.width='120px';
+    tInp.value=node.forallETerm||''; tInp.placeholder='term';
+    tInp.title='The term t to substitute in the universal';
+    tInp.autocomplete='off'; tInp.spellcheck=false;
+    tInp.addEventListener('change', () => handleForallETerm(node, tInp.value.trim()));
+    tInp.addEventListener('keydown', e => { if(e.key==='Enter') handleForallETerm(node, tInp.value.trim()); });
+    attachLiveRender(tInp);
+    row.appendChild(lbl); row.appendChild(tInp);
+    sec.appendChild(row);
+    if (node.forallETermError) {
+      const errEl = document.createElement('div');
+      errEl.style.cssText='font-family:JetBrains Mono,monospace;font-size:.65rem;color:var(--red);margin-top:4px;line-height:1.4';
+      errEl.textContent = node.forallETermError;
+      sec.appendChild(errEl);
+    }
+    card.appendChild(sec);
+  }
+
+  // ∃I term section
+  if (node.rule==='exists-i' && node.children.length > 0) {
+    const sec = document.createElement('div'); sec.className='node-section';
+    const slbl = document.createElement('div');
+    slbl.className='node-section-label'; slbl.textContent='∃-INTRODUCTION TERM';
+    sec.appendChild(slbl);
+    const row = document.createElement('div'); row.className='node-hyp-row';
+    const lbl = document.createElement('label'); lbl.textContent='t =';
+    const tInp = document.createElement('input');
+    tInp.type='text'; tInp.className='node-formula-input'; tInp.style.width='120px';
+    tInp.value=node.existsITerm||''; tInp.placeholder='term';
+    tInp.title='The term t witnessing the existential';
+    tInp.autocomplete='off'; tInp.spellcheck=false;
+    tInp.addEventListener('change', () => handleExistsITerm(node, tInp.value.trim()));
+    tInp.addEventListener('keydown', e => { if(e.key==='Enter') handleExistsITerm(node, tInp.value.trim()); });
+    attachLiveRender(tInp);
+    row.appendChild(lbl); row.appendChild(tInp);
+    sec.appendChild(row);
+    if (node.existsITermError) {
+      const errEl = document.createElement('div');
+      errEl.style.cssText='font-family:JetBrains Mono,monospace;font-size:.65rem;color:var(--red);margin-top:4px;line-height:1.4';
+      errEl.textContent = node.existsITermError;
+      sec.appendChild(errEl);
+    }
+    card.appendChild(sec);
+  }
+
+  // ∃E section: variable y + hypothesis formula
+  if (node.rule==='exists-e' && node.children.length > 0) {
+    const sec = document.createElement('div'); sec.className='node-section';
+    const slbl = document.createElement('div');
+    slbl.className='node-section-label'; slbl.textContent='∃-ELIMINATION';
+    sec.appendChild(slbl);
+
+    // Variable y row
+    const varRow = document.createElement('div'); varRow.className='node-hyp-row';
+    const varLbl = document.createElement('label'); varLbl.textContent='y =';
+    const yInp = document.createElement('input');
+    yInp.type='text'; yInp.className='node-formula-input'; yInp.style.width='60px';
+    yInp.value=node.existsEVar||''; yInp.placeholder='y';
+    yInp.title='Fresh variable — must not occur free in the conclusion or any active hypothesis';
+    yInp.autocomplete='off'; yInp.spellcheck=false;
+    yInp.addEventListener('change', () => handleExistsEVar(node, yInp.value.trim()));
+    yInp.addEventListener('keydown', e => { if(e.key==='Enter') handleExistsEVar(node, yInp.value.trim()); });
+    attachLiveRender(yInp);
+    varRow.appendChild(varLbl); varRow.appendChild(yInp);
+    sec.appendChild(varRow);
+    if (node.existsEVarError) {
+      const errEl = document.createElement('div');
+      errEl.style.cssText='font-family:JetBrains Mono,monospace;font-size:.65rem;color:var(--red);margin-top:4px;line-height:1.4';
+      errEl.textContent = node.existsEVarError;
+      sec.appendChild(errEl);
+    }
+
+    // Hypothesis number + formula row
+    const hypSubLbl = document.createElement('div');
+    hypSubLbl.style.cssText='font-family:JetBrains Mono,monospace;font-size:.6rem;color:var(--chalk-faint);margin-top:6px;margin-bottom:3px';
+    hypSubLbl.textContent='NEW HYPOTHESIS P[x↦y]';
+    sec.appendChild(hypSubLbl);
+
+    const hypRow = document.createElement('div'); hypRow.className='node-hyp-row';
+    const numLbl = document.createElement('label'); numLbl.textContent='#';
+    const numInp = document.createElement('input');
+    numInp.className='node-num-input'; numInp.type='number'; numInp.min=1;
+    numInp.value=node.hypNum||''; numInp.placeholder='n';
+    numInp.addEventListener('change', () => handleHypNum(node, numInp.value));
+
+    const hypFInp = document.createElement('input');
+    hypFInp.type='text'; hypFInp.className='node-formula-input'; hypFInp.style.fontSize='0.82rem';
+    hypFInp.value=node.existsEHypFormula||''; hypFInp.placeholder='P[x↦y]';
+    hypFInp.title='The hypothesis formula introduced by ∃E';
+    hypFInp.addEventListener('change', () => handleExistsEHyp(node, hypFInp.value.trim()));
+    hypFInp.addEventListener('keydown', e => { if(e.key==='Enter') handleExistsEHyp(node, hypFInp.value.trim()); });
+    attachLiveRender(hypFInp);
+
+    hypRow.appendChild(numLbl); hypRow.appendChild(numInp); hypRow.appendChild(hypFInp);
+    sec.appendChild(hypRow);
+
+    // Hint button
+    const hintBtn = document.createElement('button');
+    hintBtn.className='hint-btn'; hintBtn.textContent='💡 Hint';
+    hintBtn.addEventListener('click', () => {
+      const p0 = node.children[0]?.formula ? tryParse(node.children[0].formula) : null;
+      const y  = node.existsEVar;
+      if (p0?.op==='EXISTS' && y) {
+        const hyp = subst(p0.body, p0.var, {op:'VAR',name:y});
+        showFeedback('info','Hypothesis hint',`The hypothesis is ${fmtAST(hyp)} (substituting ${p0.var}↦${y} in the body of premise 1).`);
+      } else {
+        showFeedback('info','Hypothesis hint','Fill in y and premise 1 (∃x. P) first — the hypothesis will be P[x↦y].');
+      }
+    });
+    sec.appendChild(hintBtn);
+    card.appendChild(sec);
+  }
+
   // Rule selector (leaf with formula, no rule yet)
   if (node.children.length===0 && !node.isHypLeaf && node.formula && !node.rule) {
     const actions = document.createElement('div'); actions.className='node-actions';
@@ -1049,6 +1572,10 @@ function clearNode(node) {
   removeHypsAt(node);
   node.children=[]; node.rule=null; node.status=null;
   node.hypNum=null; node.hypFormula=null; node.cancelNum=null; node.isHypLeaf=false;
+  node.forallVar=null; node.forallVarError=null;
+  node.forallETerm=null; node.forallETermError=null;
+  node.existsITerm=null; node.existsITermError=null;
+  node.existsEVar=null; node.existsEVarError=null; node.existsEHypFormula=null;
 }
 
 function changeRule(node) {
@@ -1070,11 +1597,63 @@ async function applyRule(node, ruleId) {
   }
 
   if (ruleId==='lem') {
-    // LEM is a classical axiom — no premises needed, branch is immediately closed
     const isValid = feedbackForRule(node, ruleId);
     if (!isValid) return;
     node.rule='lem'; node.status='ok'; node.isHypLeaf=true;
     renderTree();
+    return;
+  }
+
+  if (ruleId==='forall-i') {
+    const isValid = feedbackForRule(node, ruleId);
+    if (!isValid) return;
+    node.rule='forall-i'; node.status=null;
+    node.forallVar = '';
+    node.children.push(newNode('', { isOpen:true }));
+    renderTree();
+    return;
+  }
+
+  if (ruleId==='forall-e') {
+    const isValid = feedbackForRule(node, ruleId);
+    if (!isValid) return;
+    node.rule='forall-e'; node.status=null;
+    node.forallETerm = '';
+    node.children.push(newNode('', { isOpen:true }));
+    renderTree();
+    showFeedback('info', '∀-elimination',
+      `Enter the term t below, then provide ∀x. P as the premise such that P[x↦t] equals ${node.formula}.`);
+    return;
+  }
+
+  if (ruleId==='exists-i') {
+    const isValid = feedbackForRule(node, ruleId);
+    if (!isValid) return;
+    node.rule='exists-i'; node.status=null;
+    node.existsITerm = '';
+    node.children.push(newNode('', { isOpen:true }));
+    renderTree();
+    const ast = tryParse(node.formula);
+    showFeedback('info', '∃-introduction',
+      `Enter the term t below, then prove ${ast ? fmtAST(ast.body) : 'P'}[${ast?.var||'x'}↦t] as the premise.`);
+    return;
+  }
+
+  if (ruleId==='exists-e') {
+    const isValid = feedbackForRule(node, ruleId);
+    if (!isValid) return;
+    node.rule='exists-e'; node.status=null;
+    node.existsEVar=''; node.existsEHypFormula='';
+    // Two premises: premise 0 = ∃x.P, premise 1 = C (the conclusion again)
+    node.children.push(newNode('', {isOpen:true})); // ∃x.P
+    node.children.push(newNode('', {isOpen:true})); // C
+    // Assign a hypothesis number (for P[x↦y])
+    while (hypotheses[nextHypNum]) nextHypNum++;
+    node.hypNum = nextHypNum++;
+    node.hypFormula = ''; // filled once y and premise 0 are known
+    renderTree();
+    showFeedback('info', '∃-elimination',
+      `Pick a fresh variable y, fill in the hypothesis P[x↦y], provide ∃x. P as premise 1 and ${node.formula} as premise 2.`);
     return;
   }
 
@@ -1297,6 +1876,386 @@ function handleCancelNum(node, val) {
   renderTree();
 }
 
+// ── ∀I variable validation ─────────────────────────────────────────────────
+
+function handleForallVar(node, y) {
+  node.forallVar = y;
+  node.forallVarError = null;
+  node.status = null;
+
+  if (!y) { renderTree(); return; }
+
+  // y must be a single valid identifier
+  if (!/^[A-Za-z_][A-Za-z0-9_']*$/.test(y)) {
+    node.forallVarError = `"${y}" is not a valid variable name.`;
+    node.status = 'err';
+    renderTree();
+    return;
+  }
+
+  const goalAst = tryParse(node.formula);
+  if (!goalAst || goalAst.op !== 'FORALL') {
+    node.forallVarError = 'Goal is not a universal formula.';
+    node.status = 'err';
+    renderTree();
+    return;
+  }
+
+  const x    = goalAst.var;
+  const P    = goalAst.body;
+  const yVar = {op:'VAR', name:y};
+
+  // Condition 1: y must not occur free in ∀x. P
+  // freeVars(∀x. P) = freeVars(P) \ {x}
+  const goalFV = freeVars(goalAst);
+  if (goalFV.has(y)) {
+    node.forallVarError = `${y} occurs free in ∀${x}. ${fmtAST(P)}, so it cannot be used as the instantiation variable.`;
+    node.status = 'err';
+    renderTree();
+    showFeedback('err', 'Invalid variable', node.forallVarError);
+    return;
+  }
+
+  // Condition 2: y must not occur free in any active (ancestor) hypothesis
+  const ancestorNums = getAncestorHypNums(proofTree, node);
+  for (const n of ancestorNums) {
+    const hyp = hypotheses[n];
+    if (!hyp) continue;
+    const hypAst = tryParse(hyp.formula);
+    if (hypAst && freeVars(hypAst).has(y)) {
+      node.forallVarError = `${y} occurs free in hypothesis [${n}]: ${hyp.formula}. Choose a variable that does not appear free in any active hypothesis.`;
+      node.status = 'err';
+      renderTree();
+      showFeedback('err', 'Invalid variable', node.forallVarError);
+      return;
+    }
+  }
+
+  // All conditions on y satisfied — mark node ok, validate premise if already filled
+  node.status = 'ok';
+  node.forallVarError = null;
+  showFeedback('ok', 'Valid variable',
+    `${y} is a valid choice. The premise should be ${fmtAST(P)}[${x}↦${y}], i.e., ${fmtAST(P)} with every free occurrence of ${x} replaced by ${y}` +
+    (x === y ? ` (since y = x = ${x}, the premise is just ${fmtAST(P)} itself).` : '.'));
+
+  // Re-validate the premise if it's already been filled
+  if (node.children[0] && node.children[0].formula) {
+    const premiseCheck = checkForallIPremise(node, node.children[0].formula);
+    // Correct formula → yellow (right shape, but still needs to be proved above)
+    // Wrong formula   → red
+    node.children[0].status = premiseCheck.valid ? 'warn' : 'err';
+    if (!premiseCheck.valid) showFeedback('err', 'Incorrect Premise', premiseCheck.reason);
+    else showFeedback('ok', 'Correct Premise', premiseCheck.reason);
+  }
+  renderTree();
+}
+
+// Check that the user's premise matches P[x↦y] up to alpha-equivalence
+function checkForallIPremise(node, premiseStr) {
+  const goalAst = tryParse(node.formula);
+  const premiseAst = tryParse(premiseStr);
+  if (!goalAst || goalAst.op !== 'FORALL')
+    return {valid:false, reason:'Goal is not a universal formula.'};
+  if (!premiseAst)
+    return {valid:false, reason:'Premise formula could not be parsed.'};
+  if (!node.forallVar)
+    return {valid:false, reason:'Please enter the variable y first (in the ∀I variable field below).'};
+
+  const x = goalAst.var;
+  const P = goalAst.body;
+  const y = node.forallVar;
+  const expected = subst(P, x, {op:'VAR', name:y});
+
+  if (alphaEq(expected, premiseAst)) {
+    return {valid:true, reason:`Correct — this matches ${fmtAST(P)}[${x}↦${y}].`};
+  } else {
+    return {valid:false,
+      reason:`For ∀I on ∀${x}. ${fmtAST(P)} with y = ${y}, the premise must be ${fmtAST(expected)} (i.e., ${fmtAST(P)} with every free occurrence of ${x} replaced by ${y}). You wrote ${fmtAST(premiseAst)}.`};
+  }
+}
+
+// ── ∀E term validation ─────────────────────────────────────────────────────
+
+// Parse a term string (not a formula)
+function parseTerm(s) {
+  try {
+    const tokens = tokenise(s);
+    let pos = 0;
+    const peek = () => tokens[pos];
+    const consume = () => tokens[pos++];
+    const expect = t => { if(peek()?.t!==t) throw new Error('Expected '+t); return consume(); };
+    function pTerm() {
+      const tk = peek(); if(!tk||tk.t!=='NAME') throw new Error('Expected name');
+      consume();
+      if(peek()?.t==='LPAREN'){
+        consume(); const args=[];
+        if(peek()?.t!=='RPAREN'){args.push(pTerm());while(peek()?.t==='COMMA'){consume();args.push(pTerm());}}
+        expect('RPAREN'); return{op:'FUN',name:tk.v,args};
+      }
+      return{op:'VAR',name:tk.v};
+    }
+    const t = pTerm();
+    if(pos<tokens.length) throw new Error('Extra tokens');
+    return t;
+  } catch(e) { return null; }
+}
+
+function handleForallETerm(node, tStr) {
+  node.forallETerm = tStr;
+  node.forallETermError = null;
+  node.status = null;
+
+  if (!tStr) { renderTree(); return; }
+
+  const term = parseTerm(tStr);
+  if (!term) {
+    node.forallETermError = `"${tStr}" is not a valid term. Use variable names like x, y or function applications like f(x,y).`;
+    node.status = 'err';
+    renderTree();
+    showFeedback('err', 'Invalid term', node.forallETermError);
+    return;
+  }
+
+  // Term is syntactically valid — yellow until premise also verified
+  node.forallETerm = fmtTerm(term);
+  node.forallETermError = null;
+  node.status = 'warn';
+  showFeedback('info', 'Term accepted',
+    `t = ${fmtTerm(term)} accepted. Now provide ∀x. P as the premise such that P[x↦${fmtTerm(term)}] equals ${node.formula}.`);
+
+  // Re-validate premise if already filled — premise and parent status both update
+  if (node.children[0] && node.children[0].formula) {
+    const check = checkForallEPremise(node, node.children[0].formula);
+    // Premise formula correct → yellow (right shape, still needs to be proved above)
+    // Premise formula wrong   → red
+    node.children[0].status = check.valid ? 'warn' : 'err';
+    // Parent (∀E node) green only when premise formula is correct
+    node.status = check.valid ? 'ok' : 'warn';
+    if (!check.valid) showFeedback('err', 'Incorrect Premise', check.reason);
+    else showFeedback('ok', 'Correct — ∀E complete', check.reason);
+  }
+  renderTree();
+}
+
+// Check that the premise ∀x.P satisfies P[x↦t] = conclusion (up to alpha-equivalence)
+function checkForallEPremise(node, premiseStr) {
+  const conclusionAst = tryParse(node.formula);
+  const premiseAst    = tryParse(premiseStr);
+  if (!conclusionAst) return {valid:false, reason:'Conclusion formula could not be parsed.'};
+  if (!premiseAst)    return {valid:false, reason:'Premise formula could not be parsed.'};
+  if (!node.forallETerm) return {valid:false, reason:'Please enter the term t first (in the ∀E term field below).'};
+
+  const term = parseTerm(node.forallETerm);
+  if (!term) return {valid:false, reason:`The term "${node.forallETerm}" could not be parsed.`};
+
+  if (premiseAst.op !== 'FORALL')
+    return {valid:false, reason:`∀E: the premise must be a universal ∀x. P. You wrote ${fmtAST(premiseAst)} (a ${opName(premiseAst.op)}).`};
+
+  const x = premiseAst.var;
+  const P = premiseAst.body;
+  const expected = subst(P, x, term);
+
+  if (alphaEq(expected, conclusionAst)) {
+    return {valid:true, reason:`Correct — ${fmtAST(premiseAst)} with x = ${x} substituted by t = ${fmtTerm(term)} gives ${fmtAST(expected)}, which matches the conclusion.`};
+  } else {
+    return {valid:false,
+      reason:`∀E: substituting ${x} ↦ ${fmtTerm(term)} in ${fmtAST(P)} gives ${fmtAST(expected)}, but your conclusion is ${fmtAST(conclusionAst)}. These don't match. Check that the premise universal and the term t are correct.`};
+  }
+}
+
+// ── ∃I term validation ─────────────────────────────────────────────────────
+
+function handleExistsITerm(node, tStr) {
+  node.existsITerm = tStr;
+  node.existsITermError = null;
+  node.status = null;
+
+  if (!tStr) { renderTree(); return; }
+
+  const term = parseTerm(tStr);
+  if (!term) {
+    node.existsITermError = `"${tStr}" is not a valid term. Use variable names like x, y or function applications like f(x,y).`;
+    node.status = 'err';
+    renderTree();
+    showFeedback('err', 'Invalid term', node.existsITermError);
+    return;
+  }
+
+  node.existsITerm = fmtTerm(term);
+  node.existsITermError = null;
+  node.status = 'warn'; // yellow until premise also verified
+
+  const goalAst = tryParse(node.formula);
+  if (goalAst && goalAst.op === 'EXISTS') {
+    const expected = subst(goalAst.body, goalAst.var, term);
+    showFeedback('info', 'Term accepted',
+      `t = ${fmtTerm(term)} accepted. The premise must be ${fmtAST(expected)}.`);
+  } else {
+    showFeedback('info', 'Term accepted', `t = ${fmtTerm(term)} accepted.`);
+  }
+
+  // Re-validate premise if already filled
+  if (node.children[0] && node.children[0].formula) {
+    const check = checkExistsIPremise(node, node.children[0].formula);
+    node.children[0].status = check.valid ? 'warn' : 'err';
+    node.status = check.valid ? 'ok' : 'warn';
+    if (!check.valid) showFeedback('err', 'Incorrect Premise', check.reason);
+    else showFeedback('ok', 'Correct — ∃I complete', check.reason);
+  }
+  renderTree();
+}
+
+// Check that the premise is P[x↦t] where conclusion is ∃x.P
+function checkExistsIPremise(node, premiseStr) {
+  const goalAst    = tryParse(node.formula);
+  const premiseAst = tryParse(premiseStr);
+  if (!goalAst)    return {valid:false, reason:'Conclusion formula could not be parsed.'};
+  if (!premiseAst) return {valid:false, reason:'Premise formula could not be parsed.'};
+  if (!node.existsITerm) return {valid:false, reason:'Please enter the term t first (in the ∃I term field below).'};
+  if (goalAst.op !== 'EXISTS')
+    return {valid:false, reason:`∃I requires the conclusion to be an existential ∃x. P. Your conclusion is ${fmtAST(goalAst)}.`};
+
+  const term = parseTerm(node.existsITerm);
+  if (!term) return {valid:false, reason:`The term "${node.existsITerm}" could not be parsed.`};
+
+  const x = goalAst.var;
+  const P = goalAst.body;
+  const expected = subst(P, x, term);
+
+  if (alphaEq(expected, premiseAst)) {
+    return {valid:true, reason:`Correct — ${fmtAST(P)}[${x}↦${fmtTerm(term)}] = ${fmtAST(expected)}, which matches your premise.`};
+  } else {
+    return {valid:false,
+      reason:`∃I: substituting ${x} ↦ ${fmtTerm(term)} in ${fmtAST(P)} gives ${fmtAST(expected)}, but you wrote ${fmtAST(premiseAst)}. These don't match.`};
+  }
+}
+
+// ── ∃E handlers ────────────────────────────────────────────────────────────
+
+function handleExistsEVar(node, y) {
+  node.existsEVar = y;
+  node.existsEVarError = null;
+  node.status = null;
+
+  if (!y) { renderTree(); return; }
+
+  if (!/^[A-Za-z_][A-Za-z0-9_']*$/.test(y)) {
+    node.existsEVarError = `"${y}" is not a valid variable name.`;
+    node.status = 'err'; renderTree(); return;
+  }
+
+  const goalAst = tryParse(node.formula);
+
+  // y must not occur free in C (the conclusion)
+  if (goalAst && freeVars(goalAst).has(y)) {
+    node.existsEVarError = `${y} occurs free in the conclusion ${fmtAST(goalAst)}. Choose a truly fresh variable.`;
+    node.status = 'err'; renderTree();
+    showFeedback('err','Invalid variable', node.existsEVarError); return;
+  }
+
+  // y must not occur free in any active ancestor hypothesis
+  const ancestorNums = getAncestorHypNums(proofTree, node);
+  for (const n of ancestorNums) {
+    const hyp = hypotheses[n];
+    if (!hyp) continue;
+    const hypAst = tryParse(hyp.formula);
+    if (hypAst && freeVars(hypAst).has(y)) {
+      node.existsEVarError = `${y} occurs free in hypothesis [${n}]: ${hyp.formula}. Choose a variable not free in any active hypothesis.`;
+      node.status = 'err'; renderTree();
+      showFeedback('err','Invalid variable', node.existsEVarError); return;
+    }
+  }
+
+  // Also check y doesn't occur free in ∃x.P (premise 0) if already filled
+  const p0Str = node.children[0]?.formula;
+  const p0Ast = p0Str ? tryParse(p0Str) : null;
+  if (p0Ast && freeVars(p0Ast).has(y)) {
+    node.existsEVarError = `${y} occurs free in ${fmtAST(p0Ast)}. Choose a variable not free in the existential premise.`;
+    node.status = 'err'; renderTree();
+    showFeedback('err','Invalid variable', node.existsEVarError); return;
+  }
+
+  node.existsEVarError = null;
+  node.status = 'ok';
+  showFeedback('ok','Valid variable',
+    `${y} is fresh. Now fill in the hypothesis P[x↦${y}] and provide ∃x. P as premise 1.`);
+
+  // Auto-compute hypothesis if premise 0 already filled
+  if (p0Ast?.op==='EXISTS') {
+    const hyp = subst(p0Ast.body, p0Ast.var, {op:'VAR',name:y});
+    const hypStr = fmtAST(hyp);
+    node.existsEHypFormula = hypStr;
+    node.hypFormula = hypStr;
+    if (node.hypNum) {
+      hypotheses[node.hypNum] = {formula:hypStr, cancelled:false};
+      updateHypPanel();
+    }
+  }
+  renderTree();
+}
+
+function handleExistsEHyp(node, val) {
+  const trimmed = val.trim();
+  const ast = tryParse(trimmed);
+  node.existsEHypFormula = ast ? fmtAST(ast) : trimmed;
+  node.hypFormula = node.existsEHypFormula;
+  if (node.hypNum && node.existsEHypFormula) {
+    hypotheses[node.hypNum] = {formula:node.existsEHypFormula, cancelled:false};
+    updateHypPanel();
+  }
+  // Validate against premise 0 if filled
+  const p0Str = node.children[0]?.formula;
+  const p0Ast = p0Str ? tryParse(p0Str) : null;
+  if (p0Ast && p0Ast.op==='EXISTS' && node.existsEVar) {
+    const expected = subst(p0Ast.body, p0Ast.var, {op:'VAR',name:node.existsEVar});
+    if (ast && alphaEq(expected, ast)) {
+      showFeedback('ok','Correct Hypothesis',`${node.existsEHypFormula} is the correct hypothesis P[${p0Ast.var}↦${node.existsEVar}].`);
+    } else if (ast) {
+      showFeedback('err','Wrong Hypothesis',
+        `For ∃E with y = ${node.existsEVar} and premise ∃${p0Ast.var}. ${fmtAST(p0Ast.body)}, the hypothesis must be ${fmtAST(expected)}. You wrote ${fmtAST(ast)}.`);
+    }
+  }
+  renderTree();
+}
+
+// Check premise 0 of ∃E: must be ∃x.P, and y must not occur free in it
+function checkExistsEPremise0(node, premiseStr) {
+  const premiseAst = tryParse(premiseStr);
+  if (!premiseAst) return {valid:false, reason:'Premise formula could not be parsed.'};
+  if (premiseAst.op!=='EXISTS')
+    return {valid:false, reason:`∃E: premise 1 must be an existential ∃x. P. You wrote ${fmtAST(premiseAst)} (a ${opName(premiseAst.op)}).`};
+
+  const y = node.existsEVar;
+  if (y && freeVars(premiseAst).has(y))
+    return {valid:false, reason:`∃E: the variable y = ${y} must not occur free in the existential premise ${fmtAST(premiseAst)}, but it does. Choose a different y.`};
+
+  // If y is set, compute the expected hypothesis and update it
+  if (y && node.hypNum) {
+    const hyp = subst(premiseAst.body, premiseAst.var, {op:'VAR',name:y});
+    const hypStr = fmtAST(hyp);
+    if (!node.existsEHypFormula) {
+      node.existsEHypFormula = hypStr;
+      node.hypFormula = hypStr;
+      hypotheses[node.hypNum] = {formula:hypStr, cancelled:false};
+      updateHypPanel();
+    }
+  }
+
+  return {valid:true, reason:`Correct — ${fmtAST(premiseAst)} is a valid existential for ∃E.`};
+}
+
+// Check premise 1 of ∃E: must be the conclusion C
+function checkExistsEPremise1(node, premiseStr) {
+  const premiseAst  = tryParse(premiseStr);
+  const conclusionAst = tryParse(node.formula);
+  if (!premiseAst)    return {valid:false, reason:'Premise formula could not be parsed.'};
+  if (!conclusionAst) return {valid:false, reason:'Conclusion formula could not be parsed.'};
+  if (alphaEq(premiseAst, conclusionAst))
+    return {valid:true, reason:`Correct — premise 2 is ${fmtAST(premiseAst)}, which matches the conclusion.`};
+  return {valid:false,
+    reason:`∃E: premise 2 must be the conclusion ${fmtAST(conclusionAst)} (proved under the hypothesis). You wrote ${fmtAST(premiseAst)}.`};
+}
+
 function findParent(root, target) {
   if (!root) return null;
   for (const child of root.children) {
@@ -1329,6 +2288,7 @@ function updateHypPanel() {
     const ne=document.createElement('span'); ne.className='hyp-num'; ne.textContent=n;
     const fe=document.createElement('span'); fe.className='hyp-formula'+(h.cancelled?' hyp-cancelled':'');
     fe.textContent=renderFormula(h.formula);
+    if (h.cancelled) fe.title='Discharged';
     item.appendChild(ne); item.appendChild(fe);
     list.appendChild(item);
   });
@@ -1758,7 +2718,10 @@ async function submitScore() {
       const err = await resp.json().catch(()=>({}));
       throw new Error(err.error || `HTTP ${resp.status}`);
     }
-    status.textContent = '✓ Saved!';
+    const result = await resp.json().catch(()=>({}));
+    // Use server-computed score if returned (it recomputes from the formula)
+    const confirmedScore = result.score ?? pendingEntry.score;
+    status.textContent = `✓ Saved! Score: ${confirmedScore}`;
     pendingEntry = null;
     btn.style.display = 'none';
   } catch(e) {
