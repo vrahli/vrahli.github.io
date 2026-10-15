@@ -214,12 +214,14 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .submit-status{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-dim)}
 
 /* ── TUTORIAL PANEL ──────────────────────────────────────────────── */
-#tutorial-panel{width:280px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
+#tutorial-panel{width:400px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
 #tutorial-panel.hidden{width:0;opacity:0;overflow:hidden}
-#tutorial-panel .tut-header{padding:16px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
-#tutorial-panel .tut-header h2{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.06em;display:flex;align-items:center;gap:8px}
-.tut-close-btn{margin-left:auto;background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-size:.9rem;padding:0 2px}
+#tutorial-panel .tut-header{padding:16px 18px 12px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+#tutorial-panel .tut-header h2{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.06em}
+.tut-close-btn{background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-size:.9rem;padding:0 2px}
 .tut-close-btn:hover{color:var(--chalk)}
+
+/* World list view */
 #tut-world-list{overflow-y:auto;flex:1;padding:8px 0}
 .tut-world-item{padding:10px 16px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:10px}
 .tut-world-item:hover{background:var(--bg3)}
@@ -230,42 +232,56 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .tut-world-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--accent2);margin-top:2px}
 .tut-world-lock{font-size:.7rem;color:var(--chalk-faint);margin-left:auto}
 
-/* Tutorial step panel */
-#tut-step-panel{position:absolute;inset:0;z-index:10;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
-#tut-step-panel.open{display:flex}
-.tut-step-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.tut-step-back{background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.05em}
-.tut-step-back:hover{color:var(--accent2)}
-.tut-step-title{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.05em}
-.tut-progress-dots{display:flex;gap:6px;margin-left:auto}
-.tut-dot{width:8px;height:8px;border-radius:50%;background:var(--chalk-faint)}
-.tut-dot.done{background:var(--green)}
-.tut-dot.current{background:var(--accent)}
-.tut-step-body{flex:1;overflow-y:auto;padding:20px 20px 12px}
-.tut-step-nav{padding:12px 18px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
-.tut-btn-next{flex:1;background:var(--accent);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.8rem;padding:9px;border-radius:6px;cursor:pointer;letter-spacing:.05em;transition:opacity .2s}
-.tut-btn-next:hover{opacity:.85}
-.tut-btn-next:disabled{opacity:.4;cursor:not-allowed}
-.tut-step-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint);letter-spacing:.08em;text-transform:uppercase}
+/* Single-page world view */
+#tut-world-page{display:none;flex-direction:column;flex:1;overflow:hidden}
+#tut-world-page.open{display:flex}
+.tut-page-header{padding:12px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tut-page-back{background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.05em}
+.tut-page-back:hover{color:var(--accent2)}
+.tut-page-title{font-family:'Cinzel',serif;font-size:.92rem;color:var(--accent);letter-spacing:.05em}
+.tut-page-body{flex:1;overflow-y:auto;padding:24px 20px 32px}
 
-/* Tutorial reading content */
-.tut-read h3{font-family:'Cinzel',serif;font-size:1rem;color:var(--accent);margin-bottom:14px;line-height:1.4}
-.tut-read p{color:var(--chalk-dim);font-size:.9rem;line-height:1.7;margin-bottom:14px}
+/* Section dividers on the world page */
+.tut-section{margin-bottom:28px}
+.tut-section-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.tut-section-label::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* Reading content */
+.tut-read h3{font-family:'Cinzel',serif;font-size:1.15rem;color:var(--accent);margin-bottom:14px;line-height:1.4}
+.tut-read p{color:var(--chalk-dim);font-size:1rem;line-height:1.8;margin-bottom:16px}
 .tut-read .tut-formula-example{background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--accent);margin:10px 0;text-align:center}
 .tut-read .tut-rule-box{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
-.tut-read .tut-rule-box h4{font-family:'Cinzel',serif;font-size:.75rem;color:var(--accent2);letter-spacing:.06em;margin-bottom:8px}
-.tut-read .tut-rule-line{display:flex;align-items:center;justify-content:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--chalk)}
+.tut-read .tut-rule-box h4{font-family:'Cinzel',serif;font-size:.82rem;color:var(--accent2);letter-spacing:.06em;margin-bottom:10px}
+.tut-read .tut-rule-line{display:flex;align-items:center;justify-content:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--chalk)}
 .tut-read .tut-rule-frac{display:flex;flex-direction:column;align-items:center}
 .tut-read .tut-rule-frac .tut-rule-top{border-bottom:1px solid var(--chalk-dim);padding-bottom:4px;margin-bottom:4px;text-align:center;min-width:80px}
 .tut-read .tut-rule-tag{color:var(--accent);font-size:.75rem}
 
-/* Tutorial animate step */
-.tut-anim-area{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:14px;margin:10px 0;min-height:80px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--chalk-dim);overflow:auto}
-.tut-anim-status{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent2);text-align:center;margin-top:6px;min-height:1.2em}
-.tut-btn-replay{background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s;margin-top:6px}
+/* Inline animation area */
+.tut-anim-wrap{background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.tut-anim-canvas{min-height:120px;max-height:260px;overflow:auto;padding:14px;display:flex;align-items:center;justify-content:center}
+.tut-anim-footer{padding:8px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.tut-anim-status{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent2);flex:1;min-height:1.2em}
+.tut-btn-replay{background:var(--bg2);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .2s}
 .tut-btn-replay:hover{color:var(--accent2);border-color:var(--accent2)}
 
-/* Tutorial prove step */
+/* Prove cards */
+.tut-prove-card{background:var(--bg3);border:1px solid var(--node-border);border-radius:8px;padding:14px 16px;margin-bottom:10px;transition:border-color .2s}
+.tut-prove-card.done{border-color:rgba(126,200,150,.5)}
+.tut-prove-card-formula{font-family:'JetBrains Mono',monospace;font-size:.95rem;color:var(--accent);margin-bottom:8px}
+.tut-prove-card-desc{color:var(--chalk-dim);font-size:.88rem;line-height:1.6;margin-bottom:10px}
+.tut-prove-card-footer{display:flex;align-items:center;gap:10px}
+.tut-prove-card-status{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--chalk-faint);flex:1}
+.tut-prove-card-status.done{color:var(--green)}
+.tut-btn-load{background:var(--bg2);border:1px solid var(--accent2);color:var(--accent2);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s}
+.tut-btn-load:hover{background:var(--accent2);color:var(--bg)}
+
+/* Complete world button */
+.tut-complete-btn{width:100%;background:var(--accent);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.82rem;padding:10px;border-radius:6px;cursor:pointer;letter-spacing:.05em;transition:opacity .2s;margin-top:8px;display:none}
+.tut-complete-btn:hover{opacity:.85}
+.tut-complete-btn.visible{display:block}
+
+/* Tutorial prove step (legacy, kept for compat) */
 .tut-prove-desc{color:var(--chalk-dim);font-size:.88rem;line-height:1.65;margin-bottom:14px}
 .tut-prove-formula{font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--accent);background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:8px 14px;text-align:center;margin-bottom:14px}
 .tut-prove-status{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--chalk-faint);text-align:center;min-height:1.2em}
@@ -280,6 +296,20 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .badge-desc{color:var(--chalk-dim);font-size:.9rem;line-height:1.6;margin-bottom:20px}
 .badge-btn{background:var(--accent);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.85rem;padding:10px 28px;border-radius:6px;cursor:pointer;letter-spacing:.05em;transition:opacity .2s}
 .badge-btn:hover{opacity:.85}
+
+/* HELP BUTTON */
+#help-btn{position:fixed;bottom:24px;left:24px;width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'Cinzel',serif;font-size:1rem;font-weight:600;cursor:pointer;z-index:250;display:none;align-items:center;justify-content:center;transition:all .2s;box-shadow:var(--shadow)}
+#help-btn:hover{border-color:var(--accent2);color:var(--accent2);box-shadow:0 0 12px rgba(126,200,200,.2)}
+#help-btn.active{border-color:var(--accent);color:var(--accent)}
+#help-popup{position:fixed;bottom:70px;left:24px;width:320px;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);z-index:249;display:none;font-size:.88rem}
+#help-popup.open{display:block}
+#help-popup h3{font-family:'Cinzel',serif;font-size:.8rem;color:var(--accent2);letter-spacing:.08em;margin-bottom:12px}
+#help-popup table{width:100%;border-collapse:collapse}
+#help-popup td{padding:3px 6px;color:var(--chalk-dim);font-size:.82rem}
+#help-popup td:first-child{font-family:'JetBrains Mono',monospace;color:var(--chalk);font-size:.78rem;white-space:nowrap}
+#help-popup td:nth-child(2){color:var(--accent);font-size:1rem;text-align:center;width:36px}
+#help-popup .help-section{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+#help-popup .help-section h4{font-family:'Cinzel',serif;font-size:.72rem;color:var(--accent);letter-spacing:.06em;margin-bottom:8px}
 
 /* Tutorial open button in header */
 .tutorial-toggle{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s}
@@ -336,21 +366,18 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
     <!-- TUTORIAL PANEL -->
     <div id="tutorial-panel" class="hidden">
       <div class="tut-header">
-        <h2>🎓 Tutorial <button class="tut-close-btn" id="tutClose">✕</button></h2>
+        <h2>🎓 Tutorial</h2>
+        <button class="tut-close-btn" id="tutClose">✕</button>
       </div>
+      <!-- World list view -->
       <div id="tut-world-list"></div>
-      <!-- Step-by-step overlay inside the panel -->
-      <div id="tut-step-panel">
-        <div class="tut-step-header">
-          <button class="tut-step-back" id="tutBack">◀ Worlds</button>
-          <div class="tut-step-title" id="tutStepTitle"></div>
-          <div class="tut-progress-dots" id="tutDots"></div>
+      <!-- Single-page world view -->
+      <div id="tut-world-page">
+        <div class="tut-page-header">
+          <button class="tut-page-back" id="tutBack">◀ Worlds</button>
+          <div class="tut-page-title" id="tutPageTitle"></div>
         </div>
-        <div class="tut-step-body" id="tutStepBody"></div>
-        <div class="tut-step-nav">
-          <div class="tut-step-label" id="tutStepLabel"></div>
-          <button class="tut-btn-next" id="tutNext">Continue →</button>
-        </div>
+        <div class="tut-page-body" id="tutPageBody"></div>
       </div>
     </div>
     <div id="canvas-area">
@@ -415,6 +442,35 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 </footer>
 
 <canvas id="fireworks-canvas"></canvas>
+
+<!-- Help button -->
+<button id="help-btn" title="Syntax &amp; rules reference">?</button>
+<div id="help-popup">
+  <h3>SYNTAX GUIDE</h3>
+  <table>
+    <tr><td>/\&nbsp; or &nbsp;\and</td><td>∧</td><td>conjunction</td></tr>
+    <tr><td>\/&nbsp; or &nbsp;\or</td><td>∨</td><td>disjunction</td></tr>
+    <tr><td>-&gt;&nbsp; or &nbsp;\to</td><td>→</td><td>implication</td></tr>
+    <tr><td>~&nbsp; or &nbsp;\neg</td><td>¬</td><td>negation</td></tr>
+    <tr><td>_|_&nbsp; or &nbsp;\bot</td><td>⊥</td><td>false</td></tr>
+    <tr><td>\forall x. P</td><td>∀</td><td>universal</td></tr>
+    <tr><td>\exists x. P</td><td>∃</td><td>existential</td></tr>
+  </table>
+  <div class="help-section">
+    <h4>RULES</h4>
+    <table>
+      <tr><td>→I &nbsp;→E</td><td></td><td>implication intro / elim</td></tr>
+      <tr><td>∧I &nbsp;∧E₁ ∧E₂</td><td></td><td>conjunction intro / elim</td></tr>
+      <tr><td>∨I₁ ∨I₂ &nbsp;∨E</td><td></td><td>disjunction intro / elim</td></tr>
+      <tr><td>¬I &nbsp;¬E</td><td></td><td>negation intro / elim</td></tr>
+      <tr><td>⊥E</td><td></td><td>ex falso quodlibet</td></tr>
+      <tr><td>LEM</td><td></td><td>excluded middle</td></tr>
+      <tr><td>DNE</td><td></td><td>double negation elim</td></tr>
+      <tr><td>∀I &nbsp;∀E</td><td></td><td>universal intro / elim</td></tr>
+      <tr><td>∃I &nbsp;∃E</td><td></td><td>existential intro / elim</td></tr>
+    </table>
+  </div>
+</div>
 
 <div id="completion-panel">
   <div class="completion-title">🎉 Proof Complete!</div>
@@ -2479,6 +2535,21 @@ function updateHypPanel() {
 
 document.getElementById('startBtn').addEventListener('click', startProof);
 
+// ── Help button (visible only during proof) ─────────────────────────────────
+const helpBtn   = document.getElementById('help-btn');
+const helpPopup = document.getElementById('help-popup');
+helpBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  helpPopup.classList.toggle('open');
+  helpBtn.classList.toggle('active', helpPopup.classList.contains('open'));
+});
+document.addEventListener('click', e => {
+  if (!helpPopup.contains(e.target) && e.target !== helpBtn) {
+    helpPopup.classList.remove('open');
+    helpBtn.classList.remove('active');
+  }
+});
+
 // Live preview + live Unicode replacement on the root formula input
 const rootInput = document.getElementById('rootInput');
 attachLiveRender(rootInput);
@@ -2533,6 +2604,7 @@ function startProof() {
   const tc=document.getElementById('tree-container');
   tc.style.display='flex'; tc.style.flexDirection='column'; tc.style.alignItems='center';
   document.getElementById('resetBtn').style.display='inline-block';
+  document.getElementById('help-btn').style.display='flex';
   renderTree(); updateHypPanel();
   showFeedback('info','Proof Started',`Now proving: ${formulaStr}. Select a rule from the dropdown on the root node to begin.`);
 }
@@ -2547,6 +2619,8 @@ function resetProof() {
   document.getElementById('rootInput').value='';
   document.getElementById('rootPreview').textContent='';
   document.getElementById('resetBtn').style.display='none';
+  document.getElementById('help-btn').style.display='none';
+  helpPopup.classList.remove('open'); helpBtn.classList.remove('active');
   updateHypPanel(); hideFeedback();
 }
 
@@ -3155,34 +3229,37 @@ const READ_CONTENT = {
     <div class="tut-read">
       <h3>What is Implication?</h3>
       <p>An implication <strong>A → B</strong> means: "if A is true, then B is true". For example:
-      "If it rains, the ground gets wet." You can think of → as a function: it takes a proof of A
+      "If it rains, then the ground gets wet." You can think of → as a function: it takes a proof of A
       and produces a proof of B.</p>
       <div class="tut-formula-example">A → B</div>
       <p>In natural deduction we have two rules for implication:</p>
       <div class="tut-rule-box">
-        <h4>→-INTRODUCTION (→I)</h4>
+        <h4>→-INTRODUCTION [→I]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
-          To prove A → B, <em>assume</em> A as a hypothesis and prove B. Then discharge the hypothesis.
+          To prove A → B, <em>assume</em> A as a hypothesis and prove B.
+          Give a name to your hypothesis (here <strong>1</strong>). Then whenever you encounter A
+          in the rest of your proof above that step, cancel/discharge A by drawing a bar over it,
+          labelled with the name of your hypothesis (here <strong>1</strong>).
         </p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
-            <div class="tut-rule-top">[A]¹ ⋯ B</div>
+            <div class="tut-rule-top">B</div>
             <div>A → B</div>
           </div>
-          <div class="tut-rule-tag">→I¹</div>
+          <div class="tut-rule-tag">¹[→I]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>→-ELIMINATION (→E, Modus Ponens)</h4>
+        <h4>→-ELIMINATION [→E]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
-          If you have A → B and A, you can conclude B.
+          If you have A → B — a way to get a B from an A — and you also have an A, you can conclude B.
         </p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">A → B &nbsp;&nbsp; A</div>
             <div>B</div>
           </div>
-          <div class="tut-rule-tag">→E</div>
+          <div class="tut-rule-tag">[→E]</div>
         </div>
       </div>
       <p>The animation will show you how to prove <strong>A → A</strong> — the simplest theorem.</p>
@@ -3663,216 +3740,311 @@ function closeTutorialPanel() {
   const panel = document.getElementById('tutorial-panel');
   panel.classList.add('hidden');
   document.getElementById('tutorialToggle').textContent = '🎓 Tutorial';
-  // Close step panel too
-  const sp = document.getElementById('tut-step-panel');
-  sp.classList.remove('open');
+  // Close world page too
+  const page = document.getElementById('tut-world-page');
+  if (page) page.classList.remove('open');
+  document.getElementById('tut-world-list').style.display = '';
   tutCurrentWorld = null;
-  // Cancel any animation
   if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
 }
 
-function openWorld(worldId) {
+// ── Inline tree renderer (for animations inside the panel) ───────────────────
+function renderTreeInto(container, node) {
+  container.innerHTML = '';
+  container.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:100%';
+  function buildEl(n) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tree-branch';
+    if (n.children && n.children.length > 0) {
+      const childRow = document.createElement('div');
+      childRow.className = 'branch-children';
+      n.children.forEach(c => childRow.appendChild(buildEl(c)));
+      wrap.appendChild(childRow);
+      const vline = document.createElement('div');
+      vline.className = 'vertical-line';
+      wrap.appendChild(vline);
+      const hWrap = document.createElement('div');
+      hWrap.className = 'horizontal-line-wrap';
+      if (n.rule) {
+        const rl = document.createElement('div');
+        rl.className = 'rule-label';
+        rl.textContent = n.rule;
+        hWrap.appendChild(rl);
+      }
+      const hLine = document.createElement('div');
+      hLine.className = 'horizontal-line';
+      hWrap.appendChild(hLine);
+      wrap.appendChild(hWrap);
+    }
+    const card = document.createElement('div');
+    card.className = 'node-card' + (n.status === 'ok' ? ' node-ok' : n.status === 'err' ? ' node-err' : n.status === 'warn' ? ' node-warn' : '');
+    const fd = document.createElement('div');
+    fd.className = 'node-formula-display';
+    fd.style.pointerEvents = 'none';
+    fd.style.cursor = 'default';
+    fd.textContent = n.formula || '?';
+    card.appendChild(fd);
+    wrap.appendChild(card);
+    return wrap;
+  }
+  if (node) container.appendChild(buildEl(node));
+}
+
+// playAnimation variant that calls a custom render function instead of renderTree()
+async function playAnimationInto(animId, statusEl, renderFn) {
+  const script = ANIMATIONS[animId];
+  if (!script) return;
+  let cancelled = false;
+  tutAnimController = { cancel: () => { cancelled = true; } };
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  for (const step of script) {
+    if (cancelled) return;
+    await sleep(step.delay);
+    if (cancelled) return;
+
+    if (step.action === 'done') {
+      if (statusEl) statusEl.textContent = '✓ Proof complete';
+      tutAnimController = null;
+      return;
+    }
+
+    const node = resolveAnimTarget(step.target);
+    if (!node) continue;
+
+    if (step.action === 'apply-rule') {
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      await applyRule(node, step.rule);
+      window.showFeedback = oldShow;
+    } else if (step.action === 'set-formula') {
+      node.formula = step.formula;
+      animHandleFormulaChange(node);
+    } else if (step.action === 'set-hyp-num') {
+      node.hypNum = step.num;
+    } else if (step.action === 'set-hyp-formula') {
+      if (!hypotheses[step.num]) hypotheses[step.num] = { formula: step.formula };
+      else hypotheses[step.num].formula = step.formula;
+    } else if (step.action === 'set-cancel') {
+      node.cancelNum = step.num;
+      node.status = 'ok';
+    } else if (step.action === 'set-forall-e-term') {
+      node.forallETerm = step.term;
+    } else if (step.action === 'set-exists-i-term') {
+      node.existsITerm = step.term;
+    }
+
+    renderFn();
+    if (statusEl && step.action !== 'done') {
+      statusEl.textContent = step.action.replace(/-/g,' ') + '…';
+    }
+  }
+}
+
+// ── Single-page world renderer ───────────────────────────────────────────────
+function openWorldPage(worldId) {
   const world = WORLDS.find(w => w.id === worldId);
   if (!world) return;
   tutCurrentWorld = worldId;
   tutCurrentStep  = 0;
-  renderWorldList();
-  showTutStep(world, 0);
-}
 
-function showTutStep(world, stepIdx) {
-  tutCurrentStep = stepIdx;
-  const step     = world.steps[stepIdx];
-  const sp       = document.getElementById('tut-step-panel');
-  sp.classList.add('open');
-
-  // Header
-  document.getElementById('tutStepTitle').textContent = world.title;
-
-  // Progress dots
-  const dots = document.getElementById('tutDots');
-  dots.innerHTML = '';
-  world.steps.forEach((s, i) => {
-    const d = document.createElement('div');
-    d.className = 'tut-dot' + (i < stepIdx ? ' done' : i === stepIdx ? ' current' : '');
-    dots.appendChild(d);
-  });
-
-  // Step label
-  const labels = { read: 'READING', animate: 'ANIMATION', prove: 'PROVE IT' };
-  document.getElementById('tutStepLabel').textContent = labels[step.type] || '';
-
-  // Next button
-  const nb = document.getElementById('tutNext');
-  nb.textContent = stepIdx < world.steps.length - 1 ? 'Continue →' : 'Complete World 🏅';
-  nb.disabled = false;
-
-  // Cancel any ongoing animation
   if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
   tutProveWaiting = false;
 
-  // Body
-  renderStepBody(world, step, nb);
-}
+  document.getElementById('tut-world-list').style.display = 'none';
+  const page = document.getElementById('tut-world-page');
+  page.classList.add('open');
+  document.getElementById('tutPageTitle').textContent = world.icon + ' ' + world.title;
 
-function renderStepBody(world, step, nextBtn) {
-  const body = document.getElementById('tutStepBody');
+  const body = document.getElementById('tutPageBody');
   body.innerHTML = '';
+  body.scrollTop = 0;
 
-  if (step.type === 'read') {
-    body.innerHTML = READ_CONTENT[step.id] || '<p>Content coming soon.</p>';
-    return;
+  const proveDone = {};
+
+  // ── Reading section ──
+  const readStep = world.steps.find(s => s.type === 'read');
+  if (readStep) {
+    const sec = document.createElement('div');
+    sec.className = 'tut-section';
+    const lbl = document.createElement('div');
+    lbl.className = 'tut-section-label';
+    lbl.textContent = 'Reading';
+    sec.appendChild(lbl);
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = READ_CONTENT[readStep.id] || '<p>Content coming soon.</p>';
+    // READ_CONTENT already wraps in <div class="tut-read">, unwrap one level
+    const inner = wrapper.firstElementChild;
+    sec.appendChild(inner || wrapper);
+    body.appendChild(sec);
   }
 
-  if (step.type === 'animate') {
+  // ── Animation section ──
+  const animStep = world.steps.find(s => s.type === 'animate');
+  if (animStep) {
+    const sec = document.createElement('div');
+    sec.className = 'tut-section';
+    const lbl = document.createElement('div');
+    lbl.className = 'tut-section-label';
+    lbl.textContent = 'Watch';
+    sec.appendChild(lbl);
+
     const desc = document.createElement('p');
-    desc.style.cssText = 'color:var(--chalk-dim);font-size:.88rem;line-height:1.65;margin-bottom:12px';
-    desc.textContent = `Watch the proof of ${step.formula} being built step by step, then continue.`;
-    body.appendChild(desc);
+    desc.style.cssText = 'color:var(--chalk-dim);font-size:.9rem;line-height:1.65;margin-bottom:10px';
+    desc.textContent = `Watch  ${animStep.formula}  being proved step by step.`;
+    sec.appendChild(desc);
 
-    const animArea = document.createElement('div');
-    animArea.className = 'tut-anim-area';
-    animArea.textContent = 'Loading animation…';
-    body.appendChild(animArea);
+    const animWrap = document.createElement('div');
+    animWrap.className = 'tut-anim-wrap';
 
+    const animCanvas = document.createElement('div');
+    animCanvas.className = 'tut-anim-canvas';
+    animCanvas.style.cssText = 'font-family:"JetBrains Mono",monospace;font-size:.75rem;color:var(--chalk-dim);min-height:100px';
+    animCanvas.textContent = '▶ Press Play to start the animation';
+    animWrap.appendChild(animCanvas);
+
+    const footer = document.createElement('div');
+    footer.className = 'tut-anim-footer';
     const statusEl = document.createElement('div');
     statusEl.className = 'tut-anim-status';
-    body.appendChild(statusEl);
+    const playBtn = document.createElement('button');
+    playBtn.className = 'tut-btn-replay';
+    playBtn.textContent = '▶ Play';
+    footer.appendChild(statusEl);
+    footer.appendChild(playBtn);
+    animWrap.appendChild(footer);
+    sec.appendChild(animWrap);
+    body.appendChild(sec);
 
-    const replayBtn = document.createElement('button');
-    replayBtn.className = 'tut-btn-replay';
-    replayBtn.textContent = '↺ Replay';
-    replayBtn.style.display = 'none';
-    body.appendChild(replayBtn);
+    function runAnim() {
+      if (tutAnimController) tutAnimController.cancel();
+      statusEl.textContent = '';
+      playBtn.disabled = true;
 
-    // Start animation: load formula into proof, then play
-    setTimeout(() => {
-      // Reset and start a fresh proof with this formula
-      const ast = tryParse(step.formula);
-      if (!ast) { animArea.textContent = 'Error: could not parse formula.'; return; }
+      const ast = tryParse(animStep.formula);
+      if (!ast) { animCanvas.textContent = 'Error: could not parse formula.'; playBtn.disabled = false; return; }
       const formulaStr = fmtAST(ast);
 
-      // Silently start proof
       hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
       proofJustCompleted = false;
-      clearTimeout(celebrationTimeout); celebrationTimeout = null;
       proofTree = newNode(formulaStr);
       proofTree.status = 'warn';
-      // Don't start timer for animations
       if (timerInterval) clearInterval(timerInterval);
       proofStartTime = null;
 
-      document.getElementById('start-panel').style.display = 'none';
-      const tc = document.getElementById('tree-container');
-      tc.style.display = 'flex';
-      tc.style.flexDirection = 'column';
-      tc.style.alignItems = 'center';
-      document.getElementById('resetBtn').style.display = 'inline-block';
-      renderTree(); updateHypPanel();
-      hideFeedback();
-      animArea.textContent = '';
+      renderTreeInto(animCanvas, proofTree);
 
-      nextBtn.disabled = true;
-      playAnimation(step.id, statusEl).then(() => {
-        replayBtn.style.display = 'inline-block';
-        nextBtn.disabled = false;
+      playAnimationInto(animStep.id, statusEl, () => renderTreeInto(animCanvas, proofTree)).then(() => {
+        playBtn.disabled = false;
+        playBtn.textContent = '↺ Replay';
       });
+    }
 
-      replayBtn.addEventListener('click', () => {
-        if (tutAnimController) tutAnimController.cancel();
-        statusEl.textContent = '';
-        replayBtn.style.display = 'none';
-        nextBtn.disabled = true;
-        // Reset proof
+    playBtn.addEventListener('click', runAnim);
+  }
+
+  // ── Prove sections ──
+  const proveSteps = world.steps.filter(s => s.type === 'prove');
+  if (proveSteps.length > 0) {
+    const sec = document.createElement('div');
+    sec.className = 'tut-section';
+    const lbl = document.createElement('div');
+    lbl.className = 'tut-section-label';
+    lbl.textContent = 'Exercises';
+    sec.appendChild(lbl);
+
+    proveSteps.forEach(step => {
+      const card = document.createElement('div');
+      card.className = 'tut-prove-card';
+
+      const formula = document.createElement('div');
+      formula.className = 'tut-prove-card-formula';
+      formula.textContent = step.formula;
+      card.appendChild(formula);
+
+      const descEl = document.createElement('p');
+      descEl.className = 'tut-prove-card-desc';
+      descEl.textContent = step.desc;
+      card.appendChild(descEl);
+
+      const cardFooter = document.createElement('div');
+      cardFooter.className = 'tut-prove-card-footer';
+
+      const statusEl = document.createElement('div');
+      statusEl.className = 'tut-prove-card-status';
+      statusEl.textContent = 'Not started';
+
+      const loadBtn = document.createElement('button');
+      loadBtn.className = 'tut-btn-load';
+      loadBtn.textContent = '⚡ Load & Prove';
+
+      cardFooter.appendChild(statusEl);
+      cardFooter.appendChild(loadBtn);
+      card.appendChild(cardFooter);
+      sec.appendChild(card);
+
+      loadBtn.addEventListener('click', () => {
+        const ast = tryParse(step.formula);
+        if (!ast) return;
+        const formulaStr = fmtAST(ast);
         hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
         proofJustCompleted = false;
+        clearTimeout(celebrationTimeout); celebrationTimeout = null;
         proofTree = newNode(formulaStr);
         proofTree.status = 'warn';
-        renderTree(); updateHypPanel();
-        playAnimation(step.id, statusEl).then(() => {
-          replayBtn.style.display = 'inline-block';
-          nextBtn.disabled = false;
-        });
-      });
-    }, 100);
-    return;
-  }
+        startTimer();
+        document.getElementById('start-panel').style.display = 'none';
+        const tc = document.getElementById('tree-container');
+        tc.style.display = 'flex'; tc.style.flexDirection = 'column'; tc.style.alignItems = 'center';
+        document.getElementById('resetBtn').style.display = 'inline-block';
+        renderTree(); updateHypPanel(); hideFeedback();
+        loadBtn.textContent = '↺ Reload';
+        statusEl.textContent = 'Working on canvas…';
 
-  if (step.type === 'prove') {
-    const desc = document.createElement('p');
-    desc.className = 'tut-prove-desc';
-    desc.textContent = step.desc;
-    body.appendChild(desc);
-
-    const fEl = document.createElement('div');
-    fEl.className = 'tut-prove-formula';
-    fEl.textContent = step.formula;
-    body.appendChild(fEl);
-
-    const statusEl = document.createElement('div');
-    statusEl.className = 'tut-prove-status';
-    statusEl.textContent = 'Load the proof below, then prove it to continue.';
-    body.appendChild(statusEl);
-
-    const loadBtn = document.createElement('button');
-    loadBtn.className = 'tut-btn-replay';
-    loadBtn.textContent = '⚡ Load Formula';
-    body.appendChild(loadBtn);
-
-    nextBtn.disabled = true;
-
-    loadBtn.addEventListener('click', () => {
-      // Start a fresh proof with this formula
-      const ast = tryParse(step.formula);
-      if (!ast) return;
-      const formulaStr = fmtAST(ast);
-      hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
-      proofJustCompleted = false;
-      clearTimeout(celebrationTimeout); celebrationTimeout = null;
-      proofTree = newNode(formulaStr);
-      proofTree.status = 'warn';
-      startTimer();
-      document.getElementById('start-panel').style.display = 'none';
-      const tc = document.getElementById('tree-container');
-      tc.style.display = 'flex'; tc.style.flexDirection = 'column'; tc.style.alignItems = 'center';
-      document.getElementById('resetBtn').style.display = 'inline-block';
-      renderTree(); updateHypPanel(); hideFeedback();
-      tutProveWaiting = true;
-      loadBtn.textContent = '↺ Reload Formula';
-      statusEl.textContent = 'Work on the proof in the canvas. Return here once it\'s complete.';
-
-      // Poll for completion
-      function checkCompletion() {
-        if (!tutProveWaiting) return;
-        if (proofTree && isProofComplete(proofTree)) {
-          statusEl.textContent = '✅ Proof complete! Click Continue.';
-          statusEl.className = 'tut-prove-status done';
-          nextBtn.disabled = false;
-          tutProveWaiting = false;
-        } else {
-          setTimeout(checkCompletion, 800);
+        const stepId = step.id;
+        function checkCompletion() {
+          if (tutCurrentWorld !== worldId) return;
+          if (proofTree && isProofComplete(proofTree)) {
+            proveDone[stepId] = true;
+            statusEl.textContent = '✅ Complete!';
+            statusEl.className = 'tut-prove-card-status done';
+            card.classList.add('done');
+            loadBtn.textContent = '↺ Redo';
+            checkAllProveDone();
+          } else {
+            setTimeout(checkCompletion, 800);
+          }
         }
-      }
-      setTimeout(checkCompletion, 800);
+        setTimeout(checkCompletion, 800);
+      });
     });
 
-    return;
+    const completeBtn = document.createElement('button');
+    completeBtn.className = 'tut-complete-btn';
+    completeBtn.textContent = '🏅 Complete World';
+    sec.appendChild(completeBtn);
+    body.appendChild(sec);
+
+    function checkAllProveDone() {
+      if (proveSteps.every(s => proveDone[s.id])) completeBtn.classList.add('visible');
+    }
+
+    completeBtn.addEventListener('click', () => {
+      const w = WORLDS.find(w => w.id === tutCurrentWorld);
+      if (w) completeWorld(w);
+    });
   }
 }
 
-function advanceTutStep() {
-  const world = WORLDS.find(w => w.id === tutCurrentWorld);
-  if (!world) return;
-
-  const nextIdx = tutCurrentStep + 1;
-  if (nextIdx < world.steps.length) {
-    showTutStep(world, nextIdx);
-  } else {
-    // World complete!
-    completeWorld(world);
-  }
+function openWorld(worldId) {
+  openWorldPage(worldId);
+  renderWorldList();
 }
 
+// ── Legacy stubs (no longer used but kept to avoid reference errors) ─────────
+function showTutStep(world, stepIdx) { openWorldPage(world.id); }
+function advanceTutStep() {}
 function completeWorld(world) {
   if (!ndProgress.completedWorlds.includes(world.id)) {
     ndProgress.completedWorlds.push(world.id);
@@ -3881,9 +4053,10 @@ function completeWorld(world) {
     saveProgress(ndProgress);
   }
 
-  // Cancel step panel
-  const sp = document.getElementById('tut-step-panel');
-  sp.classList.remove('open');
+  // Close world page, return to world list
+  const page = document.getElementById('tut-world-page');
+  page.classList.remove('open');
+  document.getElementById('tut-world-list').style.display = '';
   tutCurrentWorld = null;
   renderWorldList();
 
@@ -3922,12 +4095,12 @@ document.getElementById('tutClose').addEventListener('click', closeTutorialPanel
 document.getElementById('tutBack').addEventListener('click', () => {
   if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
   tutProveWaiting = false;
-  const sp = document.getElementById('tut-step-panel');
-  sp.classList.remove('open');
+  const page = document.getElementById('tut-world-page');
+  page.classList.remove('open');
+  document.getElementById('tut-world-list').style.display = '';
+  tutCurrentWorld = null;
   renderWorldList();
 });
-
-document.getElementById('tutNext').addEventListener('click', advanceTutStep);
 
 document.getElementById('badgeBtn').addEventListener('click', () => {
   document.getElementById('badge-modal').classList.remove('open');
