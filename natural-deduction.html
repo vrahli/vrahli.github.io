@@ -144,10 +144,10 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
   background:linear-gradient(135deg,#1e2a1e 0%,#1a2535 100%);
   border:1px solid var(--green);border-radius:12px;
   padding:22px 22px 18px;box-shadow:0 0 32px rgba(126,200,150,0.25),var(--shadow);
-  z-index:300;transform:translateY(120%);
+  z-index:300;transform:translateY(calc(100% + 48px));display:none;
   transition:transform .5s cubic-bezier(.34,1.56,.64,1);
 }
-#completion-panel.visible{transform:translateY(0)}
+#completion-panel.visible{transform:translateY(0);display:block}
 .completion-title{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--green);
   letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;gap:10px}
 .completion-body{color:var(--chalk-dim);font-size:.9rem;line-height:1.55;margin-bottom:16px}
@@ -213,6 +213,78 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .btn-submit-score:disabled{opacity:.4;cursor:not-allowed}
 .submit-status{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-dim)}
 
+/* ── TUTORIAL PANEL ──────────────────────────────────────────────── */
+#tutorial-panel{width:280px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
+#tutorial-panel.hidden{width:0;opacity:0;overflow:hidden}
+#tutorial-panel .tut-header{padding:16px 16px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
+#tutorial-panel .tut-header h2{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.06em;display:flex;align-items:center;gap:8px}
+.tut-close-btn{margin-left:auto;background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-size:.9rem;padding:0 2px}
+.tut-close-btn:hover{color:var(--chalk)}
+#tut-world-list{overflow-y:auto;flex:1;padding:8px 0}
+.tut-world-item{padding:10px 16px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:10px}
+.tut-world-item:hover{background:var(--bg3)}
+.tut-world-item.active{background:rgba(200,169,110,.1);border-left:3px solid var(--accent)}
+.tut-world-item.locked{opacity:.45;cursor:not-allowed}
+.tut-world-icon{font-size:1.1rem;flex-shrink:0}
+.tut-world-title{font-family:'Cinzel',serif;font-size:.78rem;color:var(--chalk);letter-spacing:.04em}
+.tut-world-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--accent2);margin-top:2px}
+.tut-world-lock{font-size:.7rem;color:var(--chalk-faint);margin-left:auto}
+
+/* Tutorial step panel */
+#tut-step-panel{position:absolute;inset:0;z-index:10;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+#tut-step-panel.open{display:flex}
+.tut-step-header{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tut-step-back{background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.05em}
+.tut-step-back:hover{color:var(--accent2)}
+.tut-step-title{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.05em}
+.tut-progress-dots{display:flex;gap:6px;margin-left:auto}
+.tut-dot{width:8px;height:8px;border-radius:50%;background:var(--chalk-faint)}
+.tut-dot.done{background:var(--green)}
+.tut-dot.current{background:var(--accent)}
+.tut-step-body{flex:1;overflow-y:auto;padding:20px 20px 12px}
+.tut-step-nav{padding:12px 18px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tut-btn-next{flex:1;background:var(--accent);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.8rem;padding:9px;border-radius:6px;cursor:pointer;letter-spacing:.05em;transition:opacity .2s}
+.tut-btn-next:hover{opacity:.85}
+.tut-btn-next:disabled{opacity:.4;cursor:not-allowed}
+.tut-step-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--chalk-faint);letter-spacing:.08em;text-transform:uppercase}
+
+/* Tutorial reading content */
+.tut-read h3{font-family:'Cinzel',serif;font-size:1rem;color:var(--accent);margin-bottom:14px;line-height:1.4}
+.tut-read p{color:var(--chalk-dim);font-size:.9rem;line-height:1.7;margin-bottom:14px}
+.tut-read .tut-formula-example{background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--accent);margin:10px 0;text-align:center}
+.tut-read .tut-rule-box{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+.tut-read .tut-rule-box h4{font-family:'Cinzel',serif;font-size:.75rem;color:var(--accent2);letter-spacing:.06em;margin-bottom:8px}
+.tut-read .tut-rule-line{display:flex;align-items:center;justify-content:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--chalk)}
+.tut-read .tut-rule-frac{display:flex;flex-direction:column;align-items:center}
+.tut-read .tut-rule-frac .tut-rule-top{border-bottom:1px solid var(--chalk-dim);padding-bottom:4px;margin-bottom:4px;text-align:center;min-width:80px}
+.tut-read .tut-rule-tag{color:var(--accent);font-size:.75rem}
+
+/* Tutorial animate step */
+.tut-anim-area{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:14px;margin:10px 0;min-height:80px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--chalk-dim);overflow:auto}
+.tut-anim-status{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent2);text-align:center;margin-top:6px;min-height:1.2em}
+.tut-btn-replay{background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s;margin-top:6px}
+.tut-btn-replay:hover{color:var(--accent2);border-color:var(--accent2)}
+
+/* Tutorial prove step */
+.tut-prove-desc{color:var(--chalk-dim);font-size:.88rem;line-height:1.65;margin-bottom:14px}
+.tut-prove-formula{font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--accent);background:var(--bg3);border:1px solid var(--line);border-radius:6px;padding:8px 14px;text-align:center;margin-bottom:14px}
+.tut-prove-status{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--chalk-faint);text-align:center;min-height:1.2em}
+.tut-prove-status.done{color:var(--green)}
+
+/* Badge modal */
+#badge-modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center}
+#badge-modal.open{display:flex}
+.badge-box{position:relative;background:linear-gradient(135deg,#1a2520 0%,#1a2535 100%);border:1px solid var(--accent);border-radius:14px;padding:32px 28px 26px;width:min(380px,88vw);text-align:center;box-shadow:0 0 40px rgba(200,169,110,0.2),var(--shadow);z-index:1}
+.badge-icon{font-size:3.5rem;margin-bottom:12px}
+.badge-title{font-family:'Cinzel',serif;font-size:1.2rem;color:var(--accent);letter-spacing:.08em;margin-bottom:8px}
+.badge-desc{color:var(--chalk-dim);font-size:.9rem;line-height:1.6;margin-bottom:20px}
+.badge-btn{background:var(--accent);color:var(--bg);border:none;font-family:'Cinzel',serif;font-size:.85rem;padding:10px 28px;border-radius:6px;cursor:pointer;letter-spacing:.05em;transition:opacity .2s}
+.badge-btn:hover{opacity:.85}
+
+/* Tutorial open button in header */
+.tutorial-toggle{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s}
+.tutorial-toggle:hover{color:var(--accent);border-color:var(--accent)}
+
 /* LEADERBOARD MODAL */
 #leaderboard-modal{position:fixed;inset:0;z-index:400;display:none;align-items:center;justify-content:center}
 #leaderboard-modal.open{display:flex}
@@ -255,11 +327,32 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
       <div class="timer-display" id="timerDisplay">0:00</div>
       <button class="history-btn" id="historyBtn">⏱ History</button>
       <button class="history-btn" id="leaderboardBtn">🏆 Leaderboard</button>
+      <button class="tutorial-toggle" id="tutorialToggle" style="display:none">🎓 Tutorial</button>
       <button class="reset-btn" id="resetBtn" style="display:none">↺ New Proof</button>
       <button class="hyp-panel-toggle" id="hypToggle">Hypotheses ▶</button>
     </div>
   </header>
   <div id="main-layout">
+    <!-- TUTORIAL PANEL -->
+    <div id="tutorial-panel" class="hidden">
+      <div class="tut-header">
+        <h2>🎓 Tutorial <button class="tut-close-btn" id="tutClose">✕</button></h2>
+      </div>
+      <div id="tut-world-list"></div>
+      <!-- Step-by-step overlay inside the panel -->
+      <div id="tut-step-panel">
+        <div class="tut-step-header">
+          <button class="tut-step-back" id="tutBack">◀ Worlds</button>
+          <div class="tut-step-title" id="tutStepTitle"></div>
+          <div class="tut-progress-dots" id="tutDots"></div>
+        </div>
+        <div class="tut-step-body" id="tutStepBody"></div>
+        <div class="tut-step-nav">
+          <div class="tut-step-label" id="tutStepLabel"></div>
+          <button class="tut-btn-next" id="tutNext">Continue →</button>
+        </div>
+      </div>
+    </div>
     <div id="canvas-area">
       <div id="proof-canvas">
         <div id="start-panel">
@@ -366,6 +459,17 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
   <div id="feedback-content" style="display:none">
     <div class="fb-header"><span class="fb-icon" id="fbIcon"></span><span class="fb-title" id="fbTitle"></span></div>
     <div class="fb-body" id="fbBody"></div>
+  </div>
+</div>
+
+<!-- Badge earned modal -->
+<div id="badge-modal">
+  <div class="history-backdrop" id="badgeBackdrop"></div>
+  <div class="badge-box">
+    <div class="badge-icon" id="badgeIcon"></div>
+    <div class="badge-title" id="badgeTitle"></div>
+    <div class="badge-desc" id="badgeDesc"></div>
+    <button class="badge-btn" id="badgeBtn">Continue →</button>
   </div>
 </div>
 
@@ -840,11 +944,47 @@ let hypotheses = {};      // n -> {formula, cancelled}
 let nextHypNum = 1;
 let nodeIdCounter = 0;
 
-// Timer & history
+// ── localStorage helpers ───────────────────────────────────────────────────
+// All reads/writes are wrapped in try/catch so private-browsing or quota
+// errors never crash the app — they just silently fall back to in-memory state.
+
+const LS_HISTORY  = 'nd_history';
+const LS_PROGRESS = 'nd_progress';
+const MAX_LS_HISTORY = 200; // cap so we don't bloat localStorage
+
+function lsGet(key) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch(e) { return null; }
+}
+function lsSet(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {}
+}
+function lsClear(key) {
+  try { localStorage.removeItem(key); } catch(e) {}
+}
+
+// Progress: { completedWorlds: string[], badges: string[] }
+function loadProgress() {
+  return lsGet(LS_PROGRESS) || { completedWorlds: [], badges: [] };
+}
+function saveProgress(progress) {
+  lsSet(LS_PROGRESS, progress);
+}
+
+// History: array of { formula, elapsed, score, date }
+function loadHistory() {
+  return lsGet(LS_HISTORY) || [];
+}
+function saveHistory(history) {
+  lsSet(LS_HISTORY, history.slice(-MAX_LS_HISTORY));
+}
+
+// ── Timer & history ────────────────────────────────────────────────────────
 let proofStartTime  = null;
 let timerInterval   = null;
-let proofHistory    = [];
+let proofHistory    = loadHistory();   // restored from localStorage on load
 let currentStudentName = '';
+let ndProgress      = loadProgress();  // world progression, restored on load
 
 // Leaderboard
 const WORKER_URL = 'https://natural-deduction.vincent-rahli.workers.dev';
@@ -2416,7 +2556,7 @@ function resetProof() {
 
 function evalAST(ast, env) {
   switch(ast.op) {
-    case 'ATOM': return env[ast.v] === true;
+    case 'ATOM': return env[ast.name] === true;
     case 'BOT':  return false;
     case 'NEG':  return !evalAST(ast.sub, env);
     case 'AND':  return evalAST(ast.left, env) && evalAST(ast.right, env);
@@ -2428,7 +2568,7 @@ function evalAST(ast, env) {
 
 function collectAtoms(ast, out = new Set()) {
   if (!ast) return out;
-  if (ast.op === 'ATOM') { out.add(ast.v); return out; }
+  if (ast.op === 'ATOM') { out.add(ast.name); return out; }
   if (ast.sub)   collectAtoms(ast.sub, out);
   if (ast.left)  collectAtoms(ast.left, out);
   if (ast.right) collectAtoms(ast.right, out);
@@ -2452,7 +2592,7 @@ function isTautology(ast) {
 // ═══════════════════════════════════════════
 
 function randomAST(atoms, maxDepth) {
-  const leaf = () => ({ op:'ATOM', v: atoms[Math.floor(Math.random() * atoms.length)] });
+  const leaf = () => ({ op:'ATOM', name: atoms[Math.floor(Math.random() * atoms.length)], args:[] });
   function build(depth) {
     if (depth <= 0) return leaf();
     const r = Math.random();
@@ -2465,15 +2605,14 @@ function randomAST(atoms, maxDepth) {
   return build(maxDepth);
 }
 
-function generateTautology(numAtoms, maxTries = 3000) {
+function generateTautology(numAtoms, maxTries = 8000) {
   const atomNames = ['A','B','C','D','E'].slice(0, numAtoms);
-  const maxDepth  = numAtoms + 1;
+  const maxDepth  = numAtoms + 2;
   for (let i = 0; i < maxTries; i++) {
     const ast = randomAST(atomNames, maxDepth);
     if (ast.op === 'ATOM') continue;
     if (ast.op === 'NEG' && ast.sub?.op === 'ATOM') continue;
     if (!isTautology(ast)) continue;
-    if (collectAtoms(ast).size < numAtoms) continue;
     return fmtAST(ast);
   }
   return null;
@@ -2581,8 +2720,9 @@ function celebrateCompletion() {
   const formula  = proofTree ? proofTree.formula : '';
   const { score, connectives } = computeScore(formula, elapsed);
 
-  // Record in local history
-  proofHistory.push({ formula, elapsed });
+  // Record in local history and persist
+  proofHistory.push({ formula, elapsed, score, date: new Date().toISOString() });
+  saveHistory(proofHistory);
 
   // Set up pending leaderboard entry
   pendingEntry = {
@@ -2698,7 +2838,7 @@ function closeHistory() { document.getElementById('history-modal').classList.rem
 document.getElementById('historyBtn').addEventListener('click', openHistory);
 document.getElementById('historyClose').addEventListener('click', closeHistory);
 document.getElementById('historyBackdrop').addEventListener('click', closeHistory);
-document.getElementById('historyClear').addEventListener('click', () => { proofHistory=[]; renderHistory(); });
+document.getElementById('historyClear').addEventListener('click', () => { proofHistory=[]; lsClear(LS_HISTORY); renderHistory(); });
 
 document.getElementById('leaderboardBtn').addEventListener('click', openLeaderboard);
 document.getElementById('lbClose').addEventListener('click', closeLeaderboard);
@@ -2894,6 +3034,911 @@ function closeLeaderboard() {
 }
 
 updateHypPanel();
+
+// ═══════════════════════════════════════════
+//  TUTORIAL SYSTEM
+// ═══════════════════════════════════════════
+
+// ── World definitions ──────────────────────────────────────────────────────
+
+const WORLDS = [
+  {
+    id: 'implication',
+    title: 'Implication',
+    icon: '→',
+    badge: { icon: '⚡', name: 'Implication Master', desc: 'You proved your first theorems using →I and →E.' },
+    steps: [
+      { type: 'read', id: 'read-imp' },
+      { type: 'animate', formula: 'A → A', id: 'anim-imp1' },
+      { type: 'prove', formula: 'A → B → A', id: 'prove-imp1',
+        desc: 'Prove A → (B → A) using →I twice. Hint: introduce A as a hypothesis, then introduce B, and use Cancel to close the branch for A.' },
+      { type: 'prove', formula: 'A → B → C → B', id: 'prove-imp2',
+        desc: 'Prove A → (B → (C → B)). Chain three →I steps and use Cancel to discharge the hypothesis B.' },
+    ],
+  },
+  {
+    id: 'conjunction',
+    title: 'Conjunction',
+    icon: '∧',
+    badge: { icon: '🔗', name: 'Conjunction Expert', desc: 'You mastered ∧I, ∧E₁ and ∧E₂.' },
+    steps: [
+      { type: 'read', id: 'read-and' },
+      { type: 'animate', formula: 'A ∧ B → B ∧ A', id: 'anim-and' },
+      { type: 'prove', formula: 'A ∧ B → A', id: 'prove-and1',
+        desc: 'Prove A ∧ B → A using →I and ∧E₁.' },
+      { type: 'prove', formula: '(A ∧ B) ∧ C → A ∧ (B ∧ C)', id: 'prove-and2',
+        desc: 'Prove associativity of conjunction.' },
+    ],
+  },
+  {
+    id: 'disjunction',
+    title: 'Disjunction',
+    icon: '∨',
+    badge: { icon: '🌿', name: 'Disjunction Navigator', desc: 'You navigated proof by cases with ∨I and ∨E.' },
+    steps: [
+      { type: 'read', id: 'read-or' },
+      { type: 'animate', formula: 'A ∨ B → B ∨ A', id: 'anim-or' },
+      { type: 'prove', formula: 'A → A ∨ B', id: 'prove-or1',
+        desc: 'Prove A → A ∨ B using →I and ∨I₁.' },
+      { type: 'prove', formula: 'A ∨ B → B ∨ A', id: 'prove-or2',
+        desc: 'Prove commutativity of disjunction using ∨E and ∨I.' },
+    ],
+  },
+  {
+    id: 'negation',
+    title: 'Negation & False',
+    icon: '¬',
+    badge: { icon: '💀', name: 'Contradiction Hunter', desc: 'You derived contradictions with ¬E and escaped them with ⊥E.' },
+    steps: [
+      { type: 'read', id: 'read-neg' },
+      { type: 'animate', formula: 'A ∧ ¬A → B', id: 'anim-neg' },
+      { type: 'prove', formula: '¬¬A → A', id: 'prove-neg1',
+        desc: 'Prove double-negation elimination using DNE (or ¬I and ¬E if you prefer classical reasoning).' },
+      { type: 'prove', formula: '(A → B) → (A → ¬B) → ¬A', id: 'prove-neg2',
+        desc: 'A trickier negation proof: if A implies B and A implies ¬B then ¬A.' },
+    ],
+  },
+  {
+    id: 'combining',
+    title: 'Combining Rules',
+    icon: '⚙',
+    badge: { icon: '🏅', name: 'Rule Combiner', desc: 'You combined multiple connectives in complex proofs.' },
+    steps: [
+      { type: 'read', id: 'read-comb' },
+      { type: 'prove', formula: '(A → C) ∧ (B → C) → (A ∨ B → C)', id: 'prove-comb1',
+        desc: 'Combine →, ∧ and ∨ elimination.' },
+      { type: 'prove', formula: '(A → B) ∧ (B → C) → A → C', id: 'prove-comb2',
+        desc: 'Hypothetical syllogism — chain two implications.' },
+    ],
+  },
+  {
+    id: 'universal',
+    title: 'Universal ∀',
+    icon: '∀',
+    badge: { icon: '🔭', name: 'Universal Prover', desc: 'You generalised over all elements with ∀I and ∀E.' },
+    steps: [
+      { type: 'read', id: 'read-all' },
+      { type: 'animate', formula: '(∀x. P(x)) → P(a)', id: 'anim-all' },
+      { type: 'prove', formula: '(∀x. P(x)) → (∀x. P(x))', id: 'prove-all1',
+        desc: 'Trivial but instructive: prove the reflexivity of ∀.' },
+      { type: 'prove', formula: '(∀x. P(x) ∧ Q(x)) → (∀x. P(x))', id: 'prove-all2',
+        desc: 'Prove the left projection under a universal quantifier.' },
+    ],
+  },
+  {
+    id: 'existential',
+    title: 'Existential ∃',
+    icon: '∃',
+    badge: { icon: '🌟', name: 'Existential Wizard', desc: 'You witnessed the existence of elements with ∃I and ∃E.' },
+    steps: [
+      { type: 'read', id: 'read-ex' },
+      { type: 'animate', formula: 'P(a) → (∃x. P(x))', id: 'anim-ex' },
+      { type: 'prove', formula: '(∀x. P(x)) → (∃x. P(x))', id: 'prove-ex1',
+        desc: 'If everything has property P then something has property P. Use ∀E then ∃I.' },
+      { type: 'prove', formula: '(∃x. P(x) ∧ Q(x)) → (∃x. P(x))', id: 'prove-ex2',
+        desc: 'Project an existential: existence of P∧Q witnesses existence of P.' },
+    ],
+  },
+];
+
+// ── Tutorial state ──────────────────────────────────────────────────────────
+
+let tutCurrentWorld   = null;  // world id
+let tutCurrentStep    = 0;     // step index within world
+let tutAnimController = null;  // cancels current animation
+let tutProveWaiting   = false; // true when waiting for user to finish a proof
+
+// ── Read content ────────────────────────────────────────────────────────────
+
+const READ_CONTENT = {
+  'read-imp': `
+    <div class="tut-read">
+      <h3>What is Implication?</h3>
+      <p>An implication <strong>A → B</strong> means: "if A is true, then B is true". For example:
+      "If it rains, the ground gets wet." You can think of → as a function: it takes a proof of A
+      and produces a proof of B.</p>
+      <div class="tut-formula-example">A → B</div>
+      <p>In natural deduction we have two rules for implication:</p>
+      <div class="tut-rule-box">
+        <h4>→-INTRODUCTION (→I)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          To prove A → B, <em>assume</em> A as a hypothesis and prove B. Then discharge the hypothesis.
+        </p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">[A]¹ ⋯ B</div>
+            <div>A → B</div>
+          </div>
+          <div class="tut-rule-tag">→I¹</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>→-ELIMINATION (→E, Modus Ponens)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          If you have A → B and A, you can conclude B.
+        </p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">A → B &nbsp;&nbsp; A</div>
+            <div>B</div>
+          </div>
+          <div class="tut-rule-tag">→E</div>
+        </div>
+      </div>
+      <p>The animation will show you how to prove <strong>A → A</strong> — the simplest theorem.</p>
+    </div>`,
+
+  'read-and': `
+    <div class="tut-read">
+      <h3>What is Conjunction?</h3>
+      <p>A conjunction <strong>A ∧ B</strong> means: "both A and B are true". For example:
+      "It is sunny AND warm." To prove A ∧ B you need to prove both parts separately.</p>
+      <div class="tut-formula-example">A ∧ B</div>
+      <div class="tut-rule-box">
+        <h4>∧-INTRODUCTION (∧I)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Prove A and B separately; combine them.</p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">A &nbsp;&nbsp; B</div>
+            <div>A ∧ B</div>
+          </div>
+          <div class="tut-rule-tag">∧I</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>∧-ELIMINATION (∧E₁ and ∧E₂)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Extract either conjunct from A ∧ B.</p>
+        <div class="tut-rule-line" style="gap:28px">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">A ∧ B</div>
+            <div>A</div>
+          </div>
+          <div class="tut-rule-tag">∧E₁</div>
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">A ∧ B</div>
+            <div>B</div>
+          </div>
+          <div class="tut-rule-tag">∧E₂</div>
+        </div>
+      </div>
+      <p>The animation shows commutativity: from A ∧ B derive B ∧ A.</p>
+    </div>`,
+
+  'read-or': `
+    <div class="tut-read">
+      <h3>What is Disjunction?</h3>
+      <p>A disjunction <strong>A ∨ B</strong> means: "at least one of A or B is true". For example:
+      "It will rain OR it will snow." Proving a disjunction only requires proving one side.</p>
+      <div class="tut-formula-example">A ∨ B</div>
+      <div class="tut-rule-box">
+        <h4>∨-INTRODUCTION (∨I₁ and ∨I₂)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Prove A (or B) to get A ∨ B.</p>
+        <div class="tut-rule-line" style="gap:28px">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">A</div>
+            <div>A ∨ B</div>
+          </div>
+          <div class="tut-rule-tag">∨I₁</div>
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">B</div>
+            <div>A ∨ B</div>
+          </div>
+          <div class="tut-rule-tag">∨I₂</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>∨-ELIMINATION (∨E, Proof by Cases)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">If A ∨ B, and both A→C and B→C, then C.</p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">A ∨ B &nbsp;&nbsp; A → C &nbsp;&nbsp; B → C</div>
+            <div>C</div>
+          </div>
+          <div class="tut-rule-tag">∨E</div>
+        </div>
+      </div>
+    </div>`,
+
+  'read-neg': `
+    <div class="tut-read">
+      <h3>Negation and Falsum</h3>
+      <p><strong>¬A</strong> means "A is false". <strong>⊥</strong> (falsum) represents an
+      outright contradiction — something that can never be true. From ⊥ you can derive anything.</p>
+      <div class="tut-formula-example">¬A &nbsp;&nbsp;&nbsp; ⊥</div>
+      <div class="tut-rule-box">
+        <h4>¬-INTRODUCTION (¬I)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Assume A; if you derive ⊥, then ¬A.</p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">[A]¹ ⋯ ⊥</div>
+            <div>¬A</div>
+          </div>
+          <div class="tut-rule-tag">¬I¹</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>¬-ELIMINATION (¬E)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">From ¬A and A, derive ⊥ (contradiction).</p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">¬A &nbsp;&nbsp; A</div>
+            <div>⊥</div>
+          </div>
+          <div class="tut-rule-tag">¬E</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>⊥-ELIMINATION (⊥E, EX FALSO)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">From ⊥ derive anything.</p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">⊥</div>
+            <div>A</div>
+          </div>
+          <div class="tut-rule-tag">⊥E</div>
+        </div>
+      </div>
+    </div>`,
+
+  'read-comb': `
+    <div class="tut-read">
+      <h3>Combining All Rules</h3>
+      <p>You now know all propositional connectives. Real proofs combine them freely.
+      The key skill is <em>working backwards</em>: look at the goal and ask which rule could have
+      produced it, then determine what premises that rule needs.</p>
+      <p>A useful strategy:</p>
+      <p style="background:var(--bg3);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 6px 6px 0;font-size:.85rem">
+        <strong style="color:var(--chalk)">1. Identify the main connective of the goal.</strong><br>
+        <strong style="color:var(--chalk)">2. Pick the introduction rule for that connective.</strong><br>
+        <strong style="color:var(--chalk)">3. For each new sub-goal, repeat.</strong>
+      </p>
+      <p>If the goal is an atom or hypothesis, use Cancel. If you have useful hypotheses,
+      try elimination rules to extract what you need.</p>
+    </div>`,
+
+  'read-all': `
+    <div class="tut-read">
+      <h3>Universal Quantification (∀)</h3>
+      <p><strong>∀x. P(x)</strong> means "for all x, P(x) holds". For example:
+      "Every natural number is either even or odd." The variable x ranges over the entire domain.</p>
+      <div class="tut-formula-example">∀x. P(x)</div>
+      <div class="tut-rule-box">
+        <h4>∀-INTRODUCTION (∀I)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          Pick a <em>fresh</em> variable y (not free in the goal or any active hypothesis),
+          prove P[x↦y], then generalise.
+        </p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">P[x↦y]</div>
+            <div>∀x. P(x)</div>
+          </div>
+          <div class="tut-rule-tag">∀I</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>∀-ELIMINATION (∀E)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          Instantiate the universal with any term t.
+        </p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">∀x. P(x)</div>
+            <div>P[x↦t]</div>
+          </div>
+          <div class="tut-rule-tag">∀E</div>
+        </div>
+      </div>
+      <p>Example: from ∀x. P(x), take t = a to get P(a).</p>
+    </div>`,
+
+  'read-ex': `
+    <div class="tut-read">
+      <h3>Existential Quantification (∃)</h3>
+      <p><strong>∃x. P(x)</strong> means "there exists an x such that P(x) holds". For example:
+      "There exists a prime number greater than 100." You prove this by exhibiting a specific witness.</p>
+      <div class="tut-formula-example">∃x. P(x)</div>
+      <div class="tut-rule-box">
+        <h4>∃-INTRODUCTION (∃I)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          Choose a witness term t; prove P[x↦t]; conclude ∃x. P(x).
+        </p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">P[x↦t]</div>
+            <div>∃x. P(x)</div>
+          </div>
+          <div class="tut-rule-tag">∃I</div>
+        </div>
+      </div>
+      <div class="tut-rule-box">
+        <h4>∃-ELIMINATION (∃E)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          If ∃x. P(x) holds, take a fresh name y, assume P[x↦y] as hypothesis, and derive C.
+          Then C follows without depending on the specific y.
+        </p>
+        <div class="tut-rule-line">
+          <div class="tut-rule-frac">
+            <div class="tut-rule-top">∃x. P(x) &nbsp;&nbsp; [P[x↦y]]¹ ⋯ C</div>
+            <div>C</div>
+          </div>
+          <div class="tut-rule-tag">∃E¹</div>
+        </div>
+      </div>
+    </div>`,
+};
+
+// ── Animation scripts ────────────────────────────────────────────────────────
+// Each step: {delay_ms, action, ...}
+//   action: 'set-formula' | 'apply-rule' | 'set-hyp-num' | 'set-hyp-formula' | 'set-cancel' | 'done'
+
+const ANIMATIONS = {
+  // A → A
+  'anim-imp1': [
+    { delay: 600,  action: 'apply-rule', target: 'root', rule: 'imp-i' },
+    { delay: 800,  action: 'set-hyp-num', target: 'root', num: 1 },
+    { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: 'A' },
+    { delay: 800,  action: 'set-formula', target: [0], formula: 'A' },
+    { delay: 600,  action: 'apply-rule', target: [0], rule: 'cancel' },
+    { delay: 600,  action: 'set-cancel', target: [0], num: 1 },
+    { delay: 500,  action: 'done' },
+  ],
+  // A ∧ B → B ∧ A
+  'anim-and': [
+    { delay: 600,  action: 'apply-rule', target: 'root', rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: 'root', num: 1 },
+    { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: 'A ∧ B' },
+    { delay: 900,  action: 'set-formula', target: [0], formula: 'B ∧ A' },
+    { delay: 700,  action: 'apply-rule', target: [0], rule: 'and-i' },
+    // left branch = B
+    { delay: 700,  action: 'set-formula', target: [0,0], formula: 'B' },
+    { delay: 700,  action: 'apply-rule', target: [0,0], rule: 'and-e-r' },
+    { delay: 700,  action: 'set-formula', target: [0,0,0], formula: 'A ∧ B' },
+    { delay: 600,  action: 'apply-rule', target: [0,0,0], rule: 'cancel' },
+    { delay: 600,  action: 'set-cancel', target: [0,0,0], num: 1 },
+    // right branch = A
+    { delay: 700,  action: 'set-formula', target: [0,1], formula: 'A' },
+    { delay: 700,  action: 'apply-rule', target: [0,1], rule: 'and-e-l' },
+    { delay: 700,  action: 'set-formula', target: [0,1,0], formula: 'A ∧ B' },
+    { delay: 600,  action: 'apply-rule', target: [0,1,0], rule: 'cancel' },
+    { delay: 600,  action: 'set-cancel', target: [0,1,0], num: 1 },
+    { delay: 500,  action: 'done' },
+  ],
+  // A ∨ B → B ∨ A
+  'anim-or': [
+    { delay: 600,  action: 'apply-rule', target: 'root', rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: 'root', num: 1 },
+    { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: 'A ∨ B' },
+    { delay: 900,  action: 'set-formula', target: [0], formula: 'B ∨ A' },
+    { delay: 700,  action: 'apply-rule', target: [0], rule: 'or-e' },
+    // premise 0: the disjunction
+    { delay: 700,  action: 'set-formula', target: [0,0], formula: 'A ∨ B' },
+    { delay: 600,  action: 'apply-rule', target: [0,0], rule: 'cancel' },
+    { delay: 600,  action: 'set-cancel', target: [0,0], num: 1 },
+    // premise 1: A → B ∨ A
+    { delay: 800,  action: 'set-formula', target: [0,1], formula: 'A → B ∨ A' },
+    { delay: 700,  action: 'apply-rule', target: [0,1], rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: [0,1], num: 2 },
+    { delay: 600,  action: 'set-hyp-formula', target: [0,1], formula: 'A' },
+    { delay: 700,  action: 'set-formula', target: [0,1,0], formula: 'B ∨ A' },
+    { delay: 600,  action: 'apply-rule', target: [0,1,0], rule: 'or-i-r' },
+    { delay: 600,  action: 'set-formula', target: [0,1,0,0], formula: 'A' },
+    { delay: 500,  action: 'apply-rule', target: [0,1,0,0], rule: 'cancel' },
+    { delay: 500,  action: 'set-cancel', target: [0,1,0,0], num: 2 },
+    // premise 2: B → B ∨ A
+    { delay: 800,  action: 'set-formula', target: [0,2], formula: 'B → B ∨ A' },
+    { delay: 700,  action: 'apply-rule', target: [0,2], rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: [0,2], num: 3 },
+    { delay: 600,  action: 'set-hyp-formula', target: [0,2], formula: 'B' },
+    { delay: 700,  action: 'set-formula', target: [0,2,0], formula: 'B ∨ A' },
+    { delay: 600,  action: 'apply-rule', target: [0,2,0], rule: 'or-i-l' },
+    { delay: 600,  action: 'set-formula', target: [0,2,0,0], formula: 'B' },
+    { delay: 500,  action: 'apply-rule', target: [0,2,0,0], rule: 'cancel' },
+    { delay: 500,  action: 'set-cancel', target: [0,2,0,0], num: 3 },
+    { delay: 500,  action: 'done' },
+  ],
+  // A ∧ ¬A → B
+  'anim-neg': [
+    { delay: 600,  action: 'apply-rule', target: 'root', rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: 'root', num: 1 },
+    { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: 'A ∧ ¬A' },
+    { delay: 900,  action: 'set-formula', target: [0], formula: 'B' },
+    { delay: 700,  action: 'apply-rule', target: [0], rule: 'bot-e' },
+    { delay: 700,  action: 'set-formula', target: [0,0], formula: '⊥' },
+    { delay: 700,  action: 'apply-rule', target: [0,0], rule: 'neg-e' },
+    { delay: 700,  action: 'set-formula', target: [0,0,0], formula: '¬A' },
+    { delay: 700,  action: 'apply-rule', target: [0,0,0], rule: 'and-e-r' },
+    { delay: 600,  action: 'set-formula', target: [0,0,0,0], formula: 'A ∧ ¬A' },
+    { delay: 500,  action: 'apply-rule', target: [0,0,0,0], rule: 'cancel' },
+    { delay: 500,  action: 'set-cancel', target: [0,0,0,0], num: 1 },
+    { delay: 700,  action: 'set-formula', target: [0,0,1], formula: 'A' },
+    { delay: 700,  action: 'apply-rule', target: [0,0,1], rule: 'and-e-l' },
+    { delay: 600,  action: 'set-formula', target: [0,0,1,0], formula: 'A ∧ ¬A' },
+    { delay: 500,  action: 'apply-rule', target: [0,0,1,0], rule: 'cancel' },
+    { delay: 500,  action: 'set-cancel', target: [0,0,1,0], num: 1 },
+    { delay: 500,  action: 'done' },
+  ],
+  // (∀x. P(x)) → P(a)
+  'anim-all': [
+    { delay: 600,  action: 'apply-rule', target: 'root', rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: 'root', num: 1 },
+    { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: '∀x. P(x)' },
+    { delay: 900,  action: 'set-formula', target: [0], formula: 'P(a)' },
+    { delay: 700,  action: 'apply-rule', target: [0], rule: 'forall-e' },
+    { delay: 700,  action: 'set-forall-e-term', target: [0], term: 'a' },
+    { delay: 700,  action: 'set-formula', target: [0,0], formula: '∀x. P(x)' },
+    { delay: 600,  action: 'apply-rule', target: [0,0], rule: 'cancel' },
+    { delay: 600,  action: 'set-cancel', target: [0,0], num: 1 },
+    { delay: 500,  action: 'done' },
+  ],
+  // P(a) → ∃x. P(x)
+  'anim-ex': [
+    { delay: 600,  action: 'apply-rule', target: 'root', rule: 'imp-i' },
+    { delay: 600,  action: 'set-hyp-num', target: 'root', num: 1 },
+    { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: 'P(a)' },
+    { delay: 900,  action: 'set-formula', target: [0], formula: '∃x. P(x)' },
+    { delay: 700,  action: 'apply-rule', target: [0], rule: 'exists-i' },
+    { delay: 700,  action: 'set-exists-i-term', target: [0], term: 'a' },
+    { delay: 700,  action: 'set-formula', target: [0,0], formula: 'P(a)' },
+    { delay: 600,  action: 'apply-rule', target: [0,0], rule: 'cancel' },
+    { delay: 600,  action: 'set-cancel', target: [0,0], num: 1 },
+    { delay: 500,  action: 'done' },
+  ],
+};
+
+// ── Animation player ────────────────────────────────────────────────────────
+
+function resolveAnimTarget(path) {
+  // path: 'root' | array of child indices
+  if (path === 'root') return proofTree;
+  let node = proofTree;
+  for (const idx of path) {
+    if (!node || !node.children[idx]) return null;
+    node = node.children[idx];
+  }
+  return node;
+}
+
+function animHandleFormulaChange(node) {
+  // Re-use the existing handler logic without the feedback popups
+  if (!node.formula) return;
+  const ast = tryParse(node.formula);
+  if (!ast) { node.status = 'err'; return; }
+  node.formula = fmtAST(ast);
+  node.status = 'warn';
+  const parent = findParent(proofTree, node);
+  if (parent && parent.rule) {
+    const idx = parent.children.indexOf(node);
+    const sib = parent.children.map(c => c.formula || '');
+    const check = checkPremiseValidity(parent.formula, parent.rule, node.formula, idx, sib);
+    node.status = check.valid ? 'warn' : 'err';
+  }
+}
+
+async function playAnimation(animId, statusEl) {
+  const script = ANIMATIONS[animId];
+  if (!script) return;
+  let cancelled = false;
+  tutAnimController = { cancel: () => { cancelled = true; } };
+
+  for (const step of script) {
+    if (cancelled) return;
+    await new Promise(r => setTimeout(r, step.delay));
+    if (cancelled) return;
+
+    const node = resolveAnimTarget(step.target);
+
+    if (step.action === 'done') {
+      if (statusEl) statusEl.textContent = '✓ Animation complete!';
+      // Enable next button
+      const nb = document.getElementById('tutNext');
+      if (nb) nb.disabled = false;
+      break;
+    }
+
+    if (step.action === 'set-formula' && node) {
+      node.formula = step.formula;
+      node.isOpen  = false;
+      animHandleFormulaChange(node);
+      renderTree();
+      if (statusEl) statusEl.textContent = `Setting formula: ${step.formula}`;
+    }
+
+    if (step.action === 'apply-rule' && node) {
+      // Silently run applyRule but suppress feedback
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      await applyRule(node, step.rule);
+      window.showFeedback = oldShow;
+      if (statusEl) statusEl.textContent = `Applying rule: ${step.rule}`;
+    }
+
+    if (step.action === 'set-hyp-num' && node) {
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      handleHypNum(node, step.num);
+      window.showFeedback = oldShow;
+    }
+
+    if (step.action === 'set-hyp-formula' && node) {
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      handleHypFormula(node, step.formula);
+      window.showFeedback = oldShow;
+      if (statusEl) statusEl.textContent = `Hypothesis: ${step.formula}`;
+    }
+
+    if (step.action === 'set-cancel' && node) {
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      handleCancelNum(node, step.num);
+      window.showFeedback = oldShow;
+      if (statusEl) statusEl.textContent = `Cancelling hypothesis [${step.num}]`;
+    }
+
+    if (step.action === 'set-forall-e-term' && node) {
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      handleForallETerm(node, step.term);
+      window.showFeedback = oldShow;
+      if (statusEl) statusEl.textContent = `Term t = ${step.term}`;
+    }
+
+    if (step.action === 'set-exists-i-term' && node) {
+      const oldShow = window.showFeedback;
+      window.showFeedback = () => {};
+      handleExistsITerm(node, step.term);
+      window.showFeedback = oldShow;
+      if (statusEl) statusEl.textContent = `Witness t = ${step.term}`;
+    }
+
+    renderTree();
+  }
+}
+
+// ── Panel rendering ─────────────────────────────────────────────────────────
+
+function isWorldUnlocked(worldIdx) {
+  if (worldIdx === 0) return true;
+  const prevWorld = WORLDS[worldIdx - 1];
+  return ndProgress.completedWorlds.includes(prevWorld.id);
+}
+
+function isWorldCompleted(worldId) {
+  return ndProgress.completedWorlds.includes(worldId);
+}
+
+function renderWorldList() {
+  const list = document.getElementById('tut-world-list');
+  list.innerHTML = '';
+  WORLDS.forEach((world, idx) => {
+    const unlocked   = isWorldUnlocked(idx);
+    const completed  = isWorldCompleted(world.id);
+    const isCurrent  = tutCurrentWorld === world.id;
+    const item = document.createElement('div');
+    item.className = 'tut-world-item' + (isCurrent ? ' active' : '') + (!unlocked ? ' locked' : '');
+    item.innerHTML = `
+      <div class="tut-world-icon">${world.icon}</div>
+      <div style="flex:1">
+        <div class="tut-world-title">${world.title}</div>
+        <div class="tut-world-badge">${completed ? '✓ ' + world.badge.name : unlocked ? 'Unlocked' : 'Locked'}</div>
+      </div>
+      <div class="tut-world-lock">${completed ? '✅' : !unlocked ? '🔒' : ''}</div>
+    `;
+    if (unlocked) {
+      item.addEventListener('click', () => openWorld(world.id));
+    }
+    list.appendChild(item);
+  });
+}
+
+function openTutorialPanel() {
+  const panel = document.getElementById('tutorial-panel');
+  panel.classList.remove('hidden');
+  document.getElementById('tutorialToggle').textContent = '🎓 Close Tutorial';
+  renderWorldList();
+}
+
+function closeTutorialPanel() {
+  const panel = document.getElementById('tutorial-panel');
+  panel.classList.add('hidden');
+  document.getElementById('tutorialToggle').textContent = '🎓 Tutorial';
+  // Close step panel too
+  const sp = document.getElementById('tut-step-panel');
+  sp.classList.remove('open');
+  tutCurrentWorld = null;
+  // Cancel any animation
+  if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
+}
+
+function openWorld(worldId) {
+  const world = WORLDS.find(w => w.id === worldId);
+  if (!world) return;
+  tutCurrentWorld = worldId;
+  tutCurrentStep  = 0;
+  renderWorldList();
+  showTutStep(world, 0);
+}
+
+function showTutStep(world, stepIdx) {
+  tutCurrentStep = stepIdx;
+  const step     = world.steps[stepIdx];
+  const sp       = document.getElementById('tut-step-panel');
+  sp.classList.add('open');
+
+  // Header
+  document.getElementById('tutStepTitle').textContent = world.title;
+
+  // Progress dots
+  const dots = document.getElementById('tutDots');
+  dots.innerHTML = '';
+  world.steps.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'tut-dot' + (i < stepIdx ? ' done' : i === stepIdx ? ' current' : '');
+    dots.appendChild(d);
+  });
+
+  // Step label
+  const labels = { read: 'READING', animate: 'ANIMATION', prove: 'PROVE IT' };
+  document.getElementById('tutStepLabel').textContent = labels[step.type] || '';
+
+  // Next button
+  const nb = document.getElementById('tutNext');
+  nb.textContent = stepIdx < world.steps.length - 1 ? 'Continue →' : 'Complete World 🏅';
+  nb.disabled = false;
+
+  // Cancel any ongoing animation
+  if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
+  tutProveWaiting = false;
+
+  // Body
+  renderStepBody(world, step, nb);
+}
+
+function renderStepBody(world, step, nextBtn) {
+  const body = document.getElementById('tutStepBody');
+  body.innerHTML = '';
+
+  if (step.type === 'read') {
+    body.innerHTML = READ_CONTENT[step.id] || '<p>Content coming soon.</p>';
+    return;
+  }
+
+  if (step.type === 'animate') {
+    const desc = document.createElement('p');
+    desc.style.cssText = 'color:var(--chalk-dim);font-size:.88rem;line-height:1.65;margin-bottom:12px';
+    desc.textContent = `Watch the proof of ${step.formula} being built step by step, then continue.`;
+    body.appendChild(desc);
+
+    const animArea = document.createElement('div');
+    animArea.className = 'tut-anim-area';
+    animArea.textContent = 'Loading animation…';
+    body.appendChild(animArea);
+
+    const statusEl = document.createElement('div');
+    statusEl.className = 'tut-anim-status';
+    body.appendChild(statusEl);
+
+    const replayBtn = document.createElement('button');
+    replayBtn.className = 'tut-btn-replay';
+    replayBtn.textContent = '↺ Replay';
+    replayBtn.style.display = 'none';
+    body.appendChild(replayBtn);
+
+    // Start animation: load formula into proof, then play
+    setTimeout(() => {
+      // Reset and start a fresh proof with this formula
+      const ast = tryParse(step.formula);
+      if (!ast) { animArea.textContent = 'Error: could not parse formula.'; return; }
+      const formulaStr = fmtAST(ast);
+
+      // Silently start proof
+      hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
+      proofJustCompleted = false;
+      clearTimeout(celebrationTimeout); celebrationTimeout = null;
+      proofTree = newNode(formulaStr);
+      proofTree.status = 'warn';
+      // Don't start timer for animations
+      if (timerInterval) clearInterval(timerInterval);
+      proofStartTime = null;
+
+      document.getElementById('start-panel').style.display = 'none';
+      const tc = document.getElementById('tree-container');
+      tc.style.display = 'flex';
+      tc.style.flexDirection = 'column';
+      tc.style.alignItems = 'center';
+      document.getElementById('resetBtn').style.display = 'inline-block';
+      renderTree(); updateHypPanel();
+      hideFeedback();
+      animArea.textContent = '';
+
+      nextBtn.disabled = true;
+      playAnimation(step.id, statusEl).then(() => {
+        replayBtn.style.display = 'inline-block';
+        nextBtn.disabled = false;
+      });
+
+      replayBtn.addEventListener('click', () => {
+        if (tutAnimController) tutAnimController.cancel();
+        statusEl.textContent = '';
+        replayBtn.style.display = 'none';
+        nextBtn.disabled = true;
+        // Reset proof
+        hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
+        proofJustCompleted = false;
+        proofTree = newNode(formulaStr);
+        proofTree.status = 'warn';
+        renderTree(); updateHypPanel();
+        playAnimation(step.id, statusEl).then(() => {
+          replayBtn.style.display = 'inline-block';
+          nextBtn.disabled = false;
+        });
+      });
+    }, 100);
+    return;
+  }
+
+  if (step.type === 'prove') {
+    const desc = document.createElement('p');
+    desc.className = 'tut-prove-desc';
+    desc.textContent = step.desc;
+    body.appendChild(desc);
+
+    const fEl = document.createElement('div');
+    fEl.className = 'tut-prove-formula';
+    fEl.textContent = step.formula;
+    body.appendChild(fEl);
+
+    const statusEl = document.createElement('div');
+    statusEl.className = 'tut-prove-status';
+    statusEl.textContent = 'Load the proof below, then prove it to continue.';
+    body.appendChild(statusEl);
+
+    const loadBtn = document.createElement('button');
+    loadBtn.className = 'tut-btn-replay';
+    loadBtn.textContent = '⚡ Load Formula';
+    body.appendChild(loadBtn);
+
+    nextBtn.disabled = true;
+
+    loadBtn.addEventListener('click', () => {
+      // Start a fresh proof with this formula
+      const ast = tryParse(step.formula);
+      if (!ast) return;
+      const formulaStr = fmtAST(ast);
+      hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
+      proofJustCompleted = false;
+      clearTimeout(celebrationTimeout); celebrationTimeout = null;
+      proofTree = newNode(formulaStr);
+      proofTree.status = 'warn';
+      startTimer();
+      document.getElementById('start-panel').style.display = 'none';
+      const tc = document.getElementById('tree-container');
+      tc.style.display = 'flex'; tc.style.flexDirection = 'column'; tc.style.alignItems = 'center';
+      document.getElementById('resetBtn').style.display = 'inline-block';
+      renderTree(); updateHypPanel(); hideFeedback();
+      tutProveWaiting = true;
+      loadBtn.textContent = '↺ Reload Formula';
+      statusEl.textContent = 'Work on the proof in the canvas. Return here once it\'s complete.';
+
+      // Poll for completion
+      function checkCompletion() {
+        if (!tutProveWaiting) return;
+        if (proofTree && isProofComplete(proofTree)) {
+          statusEl.textContent = '✅ Proof complete! Click Continue.';
+          statusEl.className = 'tut-prove-status done';
+          nextBtn.disabled = false;
+          tutProveWaiting = false;
+        } else {
+          setTimeout(checkCompletion, 800);
+        }
+      }
+      setTimeout(checkCompletion, 800);
+    });
+
+    return;
+  }
+}
+
+function advanceTutStep() {
+  const world = WORLDS.find(w => w.id === tutCurrentWorld);
+  if (!world) return;
+
+  const nextIdx = tutCurrentStep + 1;
+  if (nextIdx < world.steps.length) {
+    showTutStep(world, nextIdx);
+  } else {
+    // World complete!
+    completeWorld(world);
+  }
+}
+
+function completeWorld(world) {
+  if (!ndProgress.completedWorlds.includes(world.id)) {
+    ndProgress.completedWorlds.push(world.id);
+    ndProgress.badges = ndProgress.badges || [];
+    ndProgress.badges.push(world.badge.icon + ' ' + world.badge.name);
+    saveProgress(ndProgress);
+  }
+
+  // Cancel step panel
+  const sp = document.getElementById('tut-step-panel');
+  sp.classList.remove('open');
+  tutCurrentWorld = null;
+  renderWorldList();
+
+  // Show badge modal
+  document.getElementById('badgeIcon').textContent  = world.badge.icon;
+  document.getElementById('badgeTitle').textContent = world.badge.name;
+  document.getElementById('badgeDesc').textContent  = world.badge.desc;
+  document.getElementById('badge-modal').classList.add('open');
+}
+
+// ── Tutorial init ───────────────────────────────────────────────────────────
+
+// Activate tutorial via URL hash: yourpage.html#tutorial
+if (window.location.hash === '#tutorial') {
+  document.getElementById('tutorialToggle').style.display = 'inline-block';
+  openTutorialPanel();
+}
+window.addEventListener('hashchange', () => {
+  const btn = document.getElementById('tutorialToggle');
+  if (window.location.hash === '#tutorial') {
+    btn.style.display = 'inline-block';
+    openTutorialPanel();
+  } else {
+    btn.style.display = 'none';
+    closeTutorialPanel();
+  }
+});
+document.getElementById('tutorialToggle').addEventListener('click', () => {
+  const panel = document.getElementById('tutorial-panel');
+  if (panel.classList.contains('hidden')) openTutorialPanel();
+  else closeTutorialPanel();
+});
+
+document.getElementById('tutClose').addEventListener('click', closeTutorialPanel);
+
+document.getElementById('tutBack').addEventListener('click', () => {
+  if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
+  tutProveWaiting = false;
+  const sp = document.getElementById('tut-step-panel');
+  sp.classList.remove('open');
+  renderWorldList();
+});
+
+document.getElementById('tutNext').addEventListener('click', advanceTutStep);
+
+document.getElementById('badgeBtn').addEventListener('click', () => {
+  document.getElementById('badge-modal').classList.remove('open');
+});
+document.getElementById('badgeBackdrop').addEventListener('click', () => {
+  document.getElementById('badge-modal').classList.remove('open');
+});
+
+// Render world list on first open (deferred so ndProgress is loaded)
+// Already done via openTutorialPanel()
+
 </script>
 </body>
 </html>
