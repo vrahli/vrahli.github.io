@@ -298,18 +298,37 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .badge-btn:hover{opacity:.85}
 
 /* HELP BUTTON */
-#help-btn{position:fixed;bottom:24px;left:24px;width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'Cinzel',serif;font-size:1rem;font-weight:600;cursor:pointer;z-index:250;display:none;align-items:center;justify-content:center;transition:all .2s;box-shadow:var(--shadow)}
-#help-btn:hover{border-color:var(--accent2);color:var(--accent2);box-shadow:0 0 12px rgba(126,200,200,.2)}
-#help-btn.active{border-color:var(--accent);color:var(--accent)}
-#help-popup{position:fixed;bottom:70px;left:24px;width:320px;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);z-index:249;display:none;font-size:.88rem}
+.help-bar{position:fixed;bottom:24px;left:24px;display:none;gap:10px;z-index:250;align-items:center}
+.help-bar-btn{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 40% 35%,var(--bg3),var(--bg));border:1px solid var(--node-border);color:var(--accent2);font-family:'Cinzel',serif;font-size:.7rem;font-weight:600;letter-spacing:.03em;cursor:pointer;padding:0;transition:all .25s;box-shadow:0 0 8px rgba(126,200,200,.1),var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1}
+.help-bar-btn .help-q{font-size:1.05rem;font-weight:700;color:var(--accent)}
+.help-bar-btn .help-label{font-size:.42rem;text-transform:uppercase;letter-spacing:.08em;color:var(--chalk-faint)}
+.help-bar-btn:hover{border-color:var(--accent2);color:var(--accent2);box-shadow:0 0 18px rgba(126,200,200,.3),0 0 6px rgba(126,200,200,.15)}
+.help-bar-btn:hover .help-q{color:var(--accent2)}
+.help-bar-btn:hover .help-label{color:var(--accent2)}
+.help-bar-btn.active{border-color:var(--accent);box-shadow:0 0 20px rgba(200,170,110,.25),0 0 8px rgba(200,170,110,.12)}
+.help-bar-btn.active .help-q{color:var(--accent)}
+.help-bar-btn.active .help-label{color:var(--accent)}
+#help-popup{position:fixed;bottom:82px;left:24px;width:320px;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);z-index:249;display:none;font-size:.88rem}
 #help-popup.open{display:block}
 #help-popup h3{font-family:'Cinzel',serif;font-size:.8rem;color:var(--accent2);letter-spacing:.08em;margin-bottom:12px}
 #help-popup table{width:100%;border-collapse:collapse}
 #help-popup td{padding:3px 6px;color:var(--chalk-dim);font-size:.82rem}
 #help-popup td:first-child{font-family:'JetBrains Mono',monospace;color:var(--chalk);font-size:.78rem;white-space:nowrap}
 #help-popup td:nth-child(2){color:var(--accent);font-size:1rem;text-align:center;width:36px}
-#help-popup .help-section{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
-#help-popup .help-section h4{font-family:'Cinzel',serif;font-size:.72rem;color:var(--accent);letter-spacing:.06em;margin-bottom:8px}
+#rules-popup{position:fixed;bottom:82px;left:24px;width:360px;max-height:70vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);z-index:249;display:none;font-size:.88rem}
+#rules-popup.open{display:block}
+#rules-popup h3{font-family:'Cinzel',serif;font-size:.8rem;color:var(--accent2);letter-spacing:.08em;margin-bottom:12px}
+.rule-accordion{border-bottom:1px solid var(--line)}
+.rule-accordion:last-child{border-bottom:none}
+.rule-acc-header{display:flex;align-items:center;gap:8px;padding:8px 4px;cursor:pointer;transition:color .15s;color:var(--chalk-dim)}
+.rule-acc-header:hover{color:var(--accent2)}
+.rule-acc-header .rule-acc-symbol{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--accent);min-width:36px}
+.rule-acc-header .rule-acc-name{font-size:.8rem;flex:1}
+.rule-acc-header .rule-acc-arrow{font-size:.6rem;transition:transform .2s;color:var(--chalk-faint)}
+.rule-accordion.open .rule-acc-arrow{transform:rotate(90deg)}
+.rule-acc-body{display:none;padding:4px 4px 12px 44px;font-size:.78rem;color:var(--chalk-dim);line-height:1.55}
+.rule-accordion.open .rule-acc-body{display:block}
+.rule-acc-body strong{color:var(--chalk);font-weight:500}
 
 /* Tutorial open button in header */
 .tutorial-toggle{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s}
@@ -444,7 +463,10 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 <canvas id="fireworks-canvas"></canvas>
 
 <!-- Help button -->
-<button id="help-btn" title="Syntax &amp; rules reference">?</button>
+<div class="help-bar" id="helpBar">
+  <button class="help-bar-btn" id="syntaxBtn" title="Input syntax reference"><span class="help-q">?</span><span class="help-label">Syntax</span></button>
+  <button class="help-bar-btn" id="rulesBtn" title="Inference rules reference"><span class="help-q">?</span><span class="help-label">Rules</span></button>
+</div>
 <div id="help-popup">
   <h3>SYNTAX GUIDE</h3>
   <table>
@@ -456,20 +478,10 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
     <tr><td>\forall x. P</td><td>∀</td><td>universal</td></tr>
     <tr><td>\exists x. P</td><td>∃</td><td>existential</td></tr>
   </table>
-  <div class="help-section">
-    <h4>RULES</h4>
-    <table>
-      <tr><td>→I &nbsp;→E</td><td></td><td>implication intro / elim</td></tr>
-      <tr><td>∧I &nbsp;∧E₁ ∧E₂</td><td></td><td>conjunction intro / elim</td></tr>
-      <tr><td>∨I₁ ∨I₂ &nbsp;∨E</td><td></td><td>disjunction intro / elim</td></tr>
-      <tr><td>¬I &nbsp;¬E</td><td></td><td>negation intro / elim</td></tr>
-      <tr><td>⊥E</td><td></td><td>ex falso quodlibet</td></tr>
-      <tr><td>LEM</td><td></td><td>excluded middle</td></tr>
-      <tr><td>DNE</td><td></td><td>double negation elim</td></tr>
-      <tr><td>∀I &nbsp;∀E</td><td></td><td>universal intro / elim</td></tr>
-      <tr><td>∃I &nbsp;∃E</td><td></td><td>existential intro / elim</td></tr>
-    </table>
-  </div>
+</div>
+<div id="rules-popup">
+  <h3>INFERENCE RULES</h3>
+  <div id="rules-accordion-list"></div>
 </div>
 
 <div id="completion-panel">
@@ -2563,18 +2575,76 @@ function updateHypPanel() {
 
 document.getElementById('startBtn').addEventListener('click', startProof);
 
-// ── Help button (visible only during proof) ─────────────────────────────────
-const helpBtn   = document.getElementById('help-btn');
-const helpPopup = document.getElementById('help-popup');
-helpBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  helpPopup.classList.toggle('open');
-  helpBtn.classList.toggle('active', helpPopup.classList.contains('open'));
+// ── Help buttons (visible only during proof) ────────────────────────────────
+const helpBar    = document.getElementById('helpBar');
+const syntaxBtn  = document.getElementById('syntaxBtn');
+const rulesBtn   = document.getElementById('rulesBtn');
+const helpPopup  = document.getElementById('help-popup');
+const rulesPopup = document.getElementById('rules-popup');
+
+// Rule descriptions for the accordion
+const RULE_DESCS = [
+  { symbol:'→I', name:'Implication Introduction', desc:'To prove <strong>A → B</strong>, assume A as a hypothesis and derive B. Wherever A appears as a leaf in the proof above this step, it can be cancelled — because at that point we know A is true: we assumed it here.' },
+  { symbol:'→E', name:'Implication Elimination (Modus Ponens)', desc:'From <strong>A → B</strong> and <strong>A</strong>, conclude <strong>B</strong>. Provide two premises: the implication and its antecedent, in either order.' },
+  { symbol:'∧I', name:'Conjunction Introduction', desc:'To prove <strong>A ∧ B</strong>, prove both A and B separately. This creates two sub-goals.' },
+  { symbol:'∧E₁', name:'Conjunction Elimination (Left)', desc:'From <strong>A ∧ B</strong>, extract <strong>A</strong> (the left conjunct). Provide a conjunction whose left side matches your goal.' },
+  { symbol:'∧E₂', name:'Conjunction Elimination (Right)', desc:'From <strong>A ∧ B</strong>, extract <strong>B</strong> (the right conjunct). Provide a conjunction whose right side matches your goal.' },
+  { symbol:'∨I₁', name:'Disjunction Introduction (Left)', desc:'To prove <strong>A ∨ B</strong>, it suffices to prove <strong>A</strong> (the left side). Choose carefully — once picked, you must prove that side.' },
+  { symbol:'∨I₂', name:'Disjunction Introduction (Right)', desc:'To prove <strong>A ∨ B</strong>, it suffices to prove <strong>B</strong> (the right side). Choose carefully — once picked, you must prove that side.' },
+  { symbol:'∨E', name:'Disjunction Elimination (Proof by Cases)', desc:'From <strong>A ∨ B</strong>, prove your goal <strong>C</strong> by showing it follows from A and separately from B. Three premises: A ∨ B, then A → C, then B → C.' },
+  { symbol:'¬I', name:'Negation Introduction', desc:'To prove <strong>¬A</strong>, assume A as a hypothesis and derive a contradiction <strong>⊥</strong>. If assuming A leads to false, then A cannot hold.' },
+  { symbol:'¬E', name:'Negation Elimination', desc:'From <strong>¬A</strong> and <strong>A</strong>, derive <strong>⊥</strong> (a contradiction). The goal must be ⊥. Provide the formula and its negation in either order.' },
+  { symbol:'⊥E', name:'Ex Falso Quodlibet', desc:'From <strong>⊥</strong> (false), derive anything. If you have a contradiction, any formula follows. Provide a proof of ⊥.' },
+  { symbol:'DNE', name:'Double Negation Elimination', desc:'From <strong>¬¬A</strong>, conclude <strong>A</strong>. A classical rule — if it is not the case that A is false, then A is true.' },
+  { symbol:'LEM', name:'Law of Excluded Middle', desc:'<strong>A ∨ ¬A</strong> holds for any formula A, with no premises needed. A classical axiom — every proposition is either true or false.' },
+  { symbol:'∀I', name:'Universal Introduction', desc:'To prove <strong>∀x. P(x)</strong>, choose a fresh variable y that does not appear free in ∀x. P(x) or in any active hypothesis, then prove P(y). Since y was arbitrary, the result holds for all x.' },
+  { symbol:'∀E', name:'Universal Elimination', desc:'From <strong>∀x. P(x)</strong>, conclude <strong>P(t)</strong> for any term t. Provide the term to substitute and the universal statement as the premise.' },
+  { symbol:'∃I', name:'Existential Introduction', desc:'To prove <strong>∃x. P(x)</strong>, provide a specific term t and prove <strong>P(t)</strong>. The witness t shows that at least one element satisfies P.' },
+  { symbol:'∃E', name:'Existential Elimination', desc:'From <strong>∃x. P(x)</strong>, derive a conclusion C by assuming P(y) for a fresh variable y, then proving C under that assumption. Two premises: the existential, and C proved from the hypothesis P(y).' },
+];
+
+// Build accordion
+const accList = document.getElementById('rules-accordion-list');
+RULE_DESCS.forEach(r => {
+  const item = document.createElement('div');
+  item.className = 'rule-accordion';
+  item.innerHTML = `
+    <div class="rule-acc-header">
+      <span class="rule-acc-symbol">${r.symbol}</span>
+      <span class="rule-acc-name">${r.name}</span>
+      <span class="rule-acc-arrow">▶</span>
+    </div>
+    <div class="rule-acc-body">${r.desc}</div>
+  `;
+  item.querySelector('.rule-acc-header').addEventListener('click', () => {
+    item.classList.toggle('open');
+  });
+  accList.appendChild(item);
 });
+
+function closeAllHelp() {
+  helpPopup.classList.remove('open'); syntaxBtn.classList.remove('active');
+  rulesPopup.classList.remove('open'); rulesBtn.classList.remove('active');
+}
+
+syntaxBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const wasOpen = helpPopup.classList.contains('open');
+  closeAllHelp();
+  if (!wasOpen) { helpPopup.classList.add('open'); syntaxBtn.classList.add('active'); }
+});
+
+rulesBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const wasOpen = rulesPopup.classList.contains('open');
+  closeAllHelp();
+  if (!wasOpen) { rulesPopup.classList.add('open'); rulesBtn.classList.add('active'); }
+});
+
 document.addEventListener('click', e => {
-  if (!helpPopup.contains(e.target) && e.target !== helpBtn) {
-    helpPopup.classList.remove('open');
-    helpBtn.classList.remove('active');
+  if (!helpPopup.contains(e.target) && !rulesPopup.contains(e.target)
+      && e.target !== syntaxBtn && e.target !== rulesBtn) {
+    closeAllHelp();
   }
 });
 
@@ -2632,7 +2702,7 @@ function startProof() {
   const tc=document.getElementById('tree-container');
   tc.style.display='flex'; tc.style.flexDirection='column'; tc.style.alignItems='center';
   document.getElementById('resetBtn').style.display='inline-block';
-  document.getElementById('help-btn').style.display='flex';
+  helpBar.style.display='flex';
   renderTree(); updateHypPanel();
   showFeedback('info','Proof Started',`Now proving: ${formulaStr}. Select a rule from the dropdown on the root node to begin.`);
 }
@@ -2647,8 +2717,8 @@ function resetProof() {
   document.getElementById('rootInput').value='';
   document.getElementById('rootPreview').textContent='';
   document.getElementById('resetBtn').style.display='none';
-  document.getElementById('help-btn').style.display='none';
-  helpPopup.classList.remove('open'); helpBtn.classList.remove('active');
+  helpBar.style.display='none';
+  closeAllHelp();
   updateHypPanel(); hideFeedback();
 }
 
