@@ -214,7 +214,7 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .submit-status{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-dim)}
 
 /* ── TUTORIAL PANEL ──────────────────────────────────────────────── */
-#tutorial-panel{width:560px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
+#tutorial-panel{position:relative;width:560px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
 #tutorial-panel.hidden{width:0;opacity:0;overflow:hidden}
 #tutorial-panel .tut-header{padding:16px 18px 12px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
 #tutorial-panel .tut-header h2{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.06em}
@@ -3764,9 +3764,79 @@ function renderWorldList() {
     }
     list.appendChild(item);
   });
+
+  // Reset tutorial button
+  const resetWrap = document.createElement('div');
+  resetWrap.style.cssText = 'padding:18px;text-align:center';
+  const resetBtn = document.createElement('button');
+  resetBtn.textContent = '↺ Reset Tutorial';
+  resetBtn.style.cssText = 'background:none;border:1px solid var(--node-border);color:var(--chalk-faint);font-family:JetBrains Mono,monospace;font-size:.68rem;padding:5px 14px;border-radius:4px;cursor:pointer;transition:all .15s;letter-spacing:.04em';
+  resetBtn.addEventListener('mouseenter', () => { resetBtn.style.borderColor='var(--accent)'; resetBtn.style.color='var(--accent)'; });
+  resetBtn.addEventListener('mouseleave', () => { resetBtn.style.borderColor='var(--node-border)'; resetBtn.style.color='var(--chalk-faint)'; });
+  resetBtn.addEventListener('click', () => showTutorialResetConfirm());
+  resetWrap.appendChild(resetBtn);
+  list.appendChild(resetWrap);
+}
+
+function showTutorialResetConfirm() {
+  // Create a confirmation overlay inside the tutorial panel
+  const existing = document.getElementById('tut-reset-confirm');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tut-reset-confirm';
+  overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:24px 28px;max-width:280px;text-align:center';
+
+  const msg = document.createElement('p');
+  msg.style.cssText = 'color:var(--chalk);font-size:.85rem;margin:0 0 16px';
+  msg.textContent = 'Reset all tutorial progress? This will re-lock worlds and remove badges.';
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:10px;justify-content:center';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:JetBrains Mono,monospace;font-size:.72rem;padding:6px 16px;border-radius:4px;cursor:pointer';
+  cancelBtn.addEventListener('click', () => overlay.remove());
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.textContent = 'Reset';
+  confirmBtn.style.cssText = 'background:var(--accent);border:none;color:var(--bg);font-family:JetBrains Mono,monospace;font-size:.72rem;padding:6px 16px;border-radius:4px;cursor:pointer;font-weight:600';
+  confirmBtn.addEventListener('click', () => {
+    overlay.remove();
+    resetTutorialProgress();
+  });
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(confirmBtn);
+  box.appendChild(msg);
+  box.appendChild(btnRow);
+  overlay.appendChild(box);
+  document.getElementById('tutorial-panel').appendChild(overlay);
+}
+
+function resetTutorialProgress() {
+  ndProgress = { completedWorlds: [], badges: [] };
+  saveProgress(ndProgress);
+  // Close any open world page
+  const page = document.getElementById('tut-world-page');
+  if (page) page.classList.remove('open');
+  document.getElementById('tut-world-list').style.display = '';
+  tutCurrentWorld = null;
+  if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
+  renderWorldList();
 }
 
 function openTutorialPanel() {
+  // Dismiss any completion celebration and clear the canvas
+  document.getElementById('completion-panel').classList.remove('visible');
+  clearTimeout(celebrationTimeout); celebrationTimeout = null;
+  proofJustCompleted = false;
+  resetProof();
+
   const panel = document.getElementById('tutorial-panel');
   panel.classList.remove('hidden');
   document.getElementById('tutorialToggle').textContent = '🎓 Close Tutorial';
