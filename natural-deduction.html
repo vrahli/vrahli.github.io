@@ -1238,19 +1238,24 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, sibling
         return {valid:false, reason:`DNE: the premise must be ¬¬${pf}, i.e. the double negation of the conclusion. You wrote ${cf}.`};
       return {valid:true, reason:`Correct — ¬¬${pf} gives ${pf} by double-negation elimination.`};
     case 'neg-e': {
-      // Either premise can be ¬A and the other A — check both orders
+      // Either premise can be ¬A and the other A — check both orders.
+      // A premise that is itself a negation (e.g. ¬¬A) could be playing either role:
+      //   as ¬A (the negative side) with sibling = A, or
+      //   as A  (the positive side) with sibling = ¬(¬¬A) = ¬¬¬A.
       const sib = siblingFormulas[premiseIndex === 0 ? 1 : 0];
       const sibAst = sib ? tryParse(sib) : null;
       if (child.op === 'NEG') {
-        // This premise is ¬A — sibling should be A
-        if (!sibAst) return {valid:true, reason:`Good — ${cf} is a negation ¬A. Now provide A as the other premise.`};
+        // Try interpretation 1: this premise is ¬A, sibling should be A = child.sub
+        if (!sibAst) return {valid:true, reason:`Good — ${cf} is a negation. Now provide the matching formula as the other premise.`};
         if (alphaEq(child.sub, sibAst)) return {valid:true, reason:`Correct — ${cf} and ${fmtAST(sibAst)} are ¬A and A.`};
-        return {valid:false, reason:`¬E: this premise is ¬A = ${fmtAST(child.sub)}, but the other premise is ${fmtAST(sibAst)}, not ${fmtAST(child.sub)}. They must be A and ¬A of each other.`};
+        // Try interpretation 2: this premise is the positive A, sibling should be ¬(this)
+        if (sibAst.op === 'NEG' && alphaEq(sibAst.sub, child)) return {valid:true, reason:`Correct — ${fmtAST(sibAst)} and ${cf} are ¬A and A.`};
+        return {valid:false, reason:`¬E: the two premises must be A and ¬A for some formula A. You have ${cf} and ${fmtAST(sibAst)} — neither is the negation of the other.`};
       } else {
-        // This premise should be A — sibling should be ¬A
+        // This premise is A (not a negation) — sibling should be ¬A
         if (!sibAst) return {valid:true, reason:`Good — ${cf} is a formula A. Now provide ¬A as the other premise.`};
         if (sibAst.op === 'NEG' && alphaEq(sibAst.sub, child)) return {valid:true, reason:`Correct — ${fmtAST(sibAst)} and ${cf} are ¬A and A.`};
-        return {valid:false, reason:`¬E: this premise is A = ${cf}, so the other premise must be ¬${cf}. You wrote ${fmtAST(sibAst)}.`};
+        return {valid:false, reason:`¬E: this premise is A = ${cf}, so the other premise must be ¬(${cf}). You wrote ${fmtAST(sibAst)}.`};
       }
     }
     case 'imp-e': {
