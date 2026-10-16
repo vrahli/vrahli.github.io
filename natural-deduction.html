@@ -229,7 +229,7 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .tut-world-item.locked{opacity:.45;cursor:not-allowed}
 .tut-world-icon{font-size:1.1rem;flex-shrink:0}
 .tut-world-title{font-family:'Cinzel',serif;font-size:.78rem;color:var(--chalk);letter-spacing:.04em}
-.tut-world-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--accent2);margin-top:2px}
+.tut-world-badge{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--accent);margin-top:3px}
 .tut-world-lock{font-size:.7rem;color:var(--chalk-faint);margin-left:auto}
 
 /* Single-page world view */
@@ -357,7 +357,7 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
       <div class="timer-display" id="timerDisplay">0:00</div>
       <button class="history-btn" id="historyBtn">⏱ History</button>
       <button class="history-btn" id="leaderboardBtn">🏆 Leaderboard</button>
-      <button class="tutorial-toggle" id="tutorialToggle" style="display:none">🎓 Tutorial</button>
+      <button class="tutorial-toggle" id="tutorialToggle">🎓 Tutorial</button>
       <button class="reset-btn" id="resetBtn" style="display:none">↺ New Proof</button>
       <button class="hyp-panel-toggle" id="hypToggle">Hypotheses ▶</button>
     </div>
@@ -1257,22 +1257,21 @@ function checkPremiseValidity(parentStr, ruleId, childStr, premiseIndex, sibling
       // Either premise can be A→B (with B = conclusion) and the other A — accept both orders
       const sibImp = siblingFormulas[premiseIndex === 0 ? 1 : 0];
       const sibImpAst = sibImp ? tryParse(sibImp) : null;
-      if (child.op === 'IMP') {
-        // This premise is A→B — check consequent matches conclusion
-        if (!alphaEq(child.right, parent))
-          return {valid:false, reason:`→E: this premise is ${cf}, but its consequent ${fmtAST(child.right)} does not match the conclusion ${pf}.`};
+      if (child.op === 'IMP' && alphaEq(child.right, parent)) {
+        // This premise is A→B where B matches the conclusion — it's the implication being eliminated
         // Check sibling is the antecedent A, if already filled
         if (!sibImpAst) return {valid:true, reason:`Good — ${cf} has consequent ${pf}. Now provide ${fmtAST(child.left)} as the other premise.`};
         if (alphaEq(sibImpAst, child.left)) return {valid:true, reason:`Correct — ${cf} and ${fmtAST(sibImpAst)} give ${pf} by →E.`};
         return {valid:false, reason:`→E: the implication is ${cf}, so the other premise must be ${fmtAST(child.left)}, not ${fmtAST(sibImpAst)}.`};
       } else {
-        // This premise should be A — sibling should be A→B
+        // This premise is A (the antecedent) — it may itself be an implication, that's fine
+        // Sibling should be A→B where B = conclusion
         if (!sibImpAst) return {valid:true, reason:`Good — ${cf} could be the antecedent A. Now provide A → ${pf} as the other premise.`};
         if (sibImpAst.op === 'IMP' && alphaEq(sibImpAst.right, parent) && alphaEq(sibImpAst.left, child))
           return {valid:true, reason:`Correct — ${fmtAST(sibImpAst)} and ${cf} give ${pf} by →E.`};
         if (sibImpAst.op === 'IMP' && alphaEq(sibImpAst.right, parent))
           return {valid:false, reason:`→E: the implication ${fmtAST(sibImpAst)} requires antecedent ${fmtAST(sibImpAst.left)}, but you wrote ${cf}.`};
-        return {valid:false, reason:`→E: the other premise must be an implication A → ${pf}. You wrote ${fmtAST(sibImpAst)}.`};
+        return {valid:false, reason:`→E: one of the two premises must be an implication A → ${pf} whose consequent matches the conclusion. Neither ${cf} nor ${sibImpAst ? fmtAST(sibImpAst) : '…'} qualifies.`};
       }
     }
     case 'forall-i':
@@ -1780,10 +1779,8 @@ function buildNodeCard(node, isRoot) {
     const defO = document.createElement('option'); defO.value=''; defO.textContent='— apply rule —';
     sel.appendChild(defO);
     RULES.forEach(r => { const o=document.createElement('option'); o.value=r.id; o.textContent=r.label; sel.appendChild(o); });
-    const applyBtn = document.createElement('button');
-    applyBtn.className='apply-rule-btn'; applyBtn.textContent='Apply Rule';
-    applyBtn.addEventListener('click', () => { if(sel.value) applyRule(node, sel.value); });
-    actions.appendChild(sel); actions.appendChild(applyBtn);
+    sel.addEventListener('change', () => { if(sel.value) applyRule(node, sel.value); });
+    actions.appendChild(sel);
     card.appendChild(actions);
   }
 
@@ -3190,6 +3187,7 @@ const WORLDS = [
         desc: 'Hypothetical syllogism — chain two implications.' },
     ],
   },
+  /* Universal and Existential worlds hidden for now
   {
     id: 'universal',
     title: 'Universal ∀',
@@ -3218,6 +3216,7 @@ const WORLDS = [
         desc: 'Project an existential: existence of P∧Q witnesses existence of P.' },
     ],
   },
+  */
 ];
 
 // ── Tutorial state ──────────────────────────────────────────────────────────
@@ -3408,16 +3407,32 @@ const READ_CONTENT = {
     <div class="tut-read">
       <h3>Combining All Rules</h3>
       <p>You now know all propositional connectives. Real proofs combine them freely.
-      The key skill is <em>working backwards</em>: look at the goal and ask which rule could have
-      produced it, then determine what premises that rule needs.</p>
-      <p>A useful strategy:</p>
+      Although the proof tree is built <em>backwards</em> (from conclusion to premises),
+      you should think both backwards and forwards.</p>
+
+      <h4 style="margin-top:16px;color:var(--accent)">Phase 1 — Break down (backward)</h4>
+      <p>Start from your goal and apply introduction rules to decompose it:
+      use [→I] when the goal is an implication (this gives you a new hypothesis),
+      [¬I] when it is a negation (this also gives you a hypothesis),
+      and [∧I] when it is a conjunction (this splits the goal into two sub-goals).
+      Be careful with [∨I₁] and [∨I₂] — introducing a disjunction requires you to
+      <em>choose</em> which side to prove, and the wrong choice leads to a dead end.
+      So leave disjunction introduction for later, when you know which side you can prove.</p>
+      <p>Keep applying introduction rules until you cannot decompose further. At this point
+      you will have collected several hypotheses and broken your goal into small pieces.</p>
+
+      <h4 style="margin-top:16px;color:var(--accent)">Phase 2 — Connect (forward)</h4>
+      <p>Now pause and look at what you have: your hypotheses on one side, your remaining
+      sub-goals on the other. Think forward: how can you get from the hypotheses to the
+      sub-goals? This is where elimination rules come in.</p>
       <p style="background:var(--bg3);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 6px 6px 0;font-size:.85rem">
-        <strong style="color:var(--chalk)">1. Identify the main connective of the goal.</strong><br>
-        <strong style="color:var(--chalk)">2. Pick the introduction rule for that connective.</strong><br>
-        <strong style="color:var(--chalk)">3. For each new sub-goal, repeat.</strong>
+        <strong style="color:var(--chalk)">Tip:</strong> If a hypothesis is a disjunction A ∨ B,
+        eliminate it with [∨E] — since you don't know whether A or B holds, you do a proof
+        by cases: show the goal follows from A, and separately show it follows from B.
       </p>
-      <p>If the goal is an atom or hypothesis, use Cancel. If you have useful hypotheses,
-      try elimination rules to extract what you need.</p>
+      <p>If a hypothesis is an implication A → B and you have (or can get) A, apply [→E]
+      to obtain B. If a hypothesis is a conjunction A ∧ B, extract whichever part you need
+      with [∧E₁] or [∧E₂]. When a sub-goal matches a hypothesis, cancel it.</p>
     </div>`,
 
   'read-all': `
@@ -3735,9 +3750,9 @@ function renderWorldList() {
       <div class="tut-world-icon">${world.icon}</div>
       <div style="flex:1">
         <div class="tut-world-title">${world.title}</div>
-        <div class="tut-world-badge">${completed ? '✓ ' + world.badge.name : unlocked ? 'Unlocked' : 'Locked'}</div>
+        <div class="tut-world-badge">${completed ? world.badge.icon + ' ' + world.badge.name : unlocked ? 'Unlocked' : 'Locked'}</div>
       </div>
-      <div class="tut-world-lock">${completed ? '✅' : !unlocked ? '🔒' : ''}</div>
+      <div class="tut-world-lock">${!unlocked ? '🔒' : ''}</div>
     `;
     if (unlocked) {
       item.addEventListener('click', () => openWorld(world.id));
@@ -4209,19 +4224,13 @@ function completeWorld(world) {
 
 // ── Tutorial init ───────────────────────────────────────────────────────────
 
-// Activate tutorial via URL hash: yourpage.html#tutorial
+// Auto-open tutorial if URL hash is #tutorial
 if (window.location.hash === '#tutorial') {
-  document.getElementById('tutorialToggle').style.display = 'inline-block';
   openTutorialPanel();
 }
 window.addEventListener('hashchange', () => {
-  const btn = document.getElementById('tutorialToggle');
   if (window.location.hash === '#tutorial') {
-    btn.style.display = 'inline-block';
     openTutorialPanel();
-  } else {
-    btn.style.display = 'none';
-    closeTutorialPanel();
   }
 });
 document.getElementById('tutorialToggle').addEventListener('click', () => {
