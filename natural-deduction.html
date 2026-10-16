@@ -214,7 +214,7 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .submit-status{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-dim)}
 
 /* ── TUTORIAL PANEL ──────────────────────────────────────────────── */
-#tutorial-panel{width:400px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
+#tutorial-panel{width:560px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;transition:width .3s,opacity .3s}
 #tutorial-panel.hidden{width:0;opacity:0;overflow:hidden}
 #tutorial-panel .tut-header{padding:16px 18px 12px;border-bottom:1px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
 #tutorial-panel .tut-header h2{font-family:'Cinzel',serif;font-size:.88rem;color:var(--accent);letter-spacing:.06em}
@@ -258,8 +258,8 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .tut-read .tut-rule-tag{color:var(--accent);font-size:.75rem}
 
 /* Inline animation area */
-.tut-anim-wrap{background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
-.tut-anim-canvas{min-height:120px;max-height:260px;overflow:auto;padding:14px;display:flex;align-items:center;justify-content:center}
+.tut-anim-wrap{background:var(--bg3);border:1px solid var(--line);border-radius:8px;overflow:visible;margin-bottom:8px}
+.tut-anim-canvas{min-height:120px;overflow:visible;padding:14px;display:flex;align-items:flex-start;justify-content:center}
 .tut-anim-footer{padding:8px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px}
 .tut-anim-status{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent2);flex:1;min-height:1.2em}
 .tut-btn-replay{background:var(--bg2);border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:5px 12px;border-radius:4px;cursor:pointer;transition:all .2s}
@@ -783,8 +783,8 @@ function fmtAST(ast) {
       const needP = ['AND','OR','IMP','FORALL','EXISTS'].includes(ast.sub.op);
       return SYM.NEG + (needP ? `(${inner})` : inner);
     }
-    case 'AND': return `${par(ast.left,['OR','IMP','FORALL','EXISTS'])} ${SYM.AND} ${par(ast.right,['OR','IMP','FORALL','EXISTS'])}`;
-    case 'OR':  return `${par(ast.left,['IMP','FORALL','EXISTS'])} ${SYM.OR} ${par(ast.right,['IMP','FORALL','EXISTS'])}`;
+    case 'AND': return `${par(ast.left,['AND','OR','IMP','FORALL','EXISTS'])} ${SYM.AND} ${par(ast.right,['OR','IMP','FORALL','EXISTS'])}`;
+    case 'OR':  return `${par(ast.left,['OR','IMP','FORALL','EXISTS'])} ${SYM.OR} ${par(ast.right,['IMP','FORALL','EXISTS'])}`;
     case 'IMP': return `${par(ast.left,['IMP','FORALL','EXISTS'])} ${SYM.IMP} ${fmtAST(ast.right)}`;
     case 'FORALL': return `∀${ast.var}. ${fmtAST(ast.body)}`;
     case 'EXISTS': return `∃${ast.var}. ${fmtAST(ast.body)}`;
@@ -1481,11 +1481,16 @@ function buildNodeElement(node, isRoot) {
     hLine.className = 'horizontal-line';
     hWrap.appendChild(hLine);
 
-    if (node.rule) {
+    if (node.rule && node.rule !== 'cancel') {
       const rule = ruleById(node.rule);
+      const sym  = rule ? rule.symbol : node.rule;
       const lbl  = document.createElement('div');
       lbl.className   = 'rule-label';
-      lbl.textContent = (rule ? rule.symbol : node.rule) + (node.cancelNum ? `[${node.cancelNum}]` : '');
+      if (node.hypNum) {
+        lbl.innerHTML = `<sup style="font-size:.7em;vertical-align:super">${node.hypNum}</sup>[${sym}]`;
+      } else {
+        lbl.textContent = `[${sym}]`;
+      }
       hWrap.appendChild(lbl);
     }
     branch.appendChild(hWrap);
@@ -3126,8 +3131,8 @@ const WORLDS = [
       { type: 'animate', formula: 'A → A', id: 'anim-imp1' },
       { type: 'prove', formula: 'A → B → A', id: 'prove-imp1',
         desc: 'Prove A → (B → A) using →I twice. Hint: introduce A as a hypothesis, then introduce B, and use Cancel to close the branch for A.' },
-      { type: 'prove', formula: 'A → B → C → B', id: 'prove-imp2',
-        desc: 'Prove A → (B → (C → B)). Chain three →I steps and use Cancel to discharge the hypothesis B.' },
+      { type: 'prove', formula: '(A → B → C) → B → A → C', id: 'prove-imp2',
+        desc: 'Prove (A → (B → C)) → (B → (A → C)). Introduce the three hypotheses with →I, then apply →E twice to reach C.' },
     ],
   },
   {
@@ -3166,8 +3171,8 @@ const WORLDS = [
     steps: [
       { type: 'read', id: 'read-neg' },
       { type: 'animate', formula: 'A ∧ ¬A → B', id: 'anim-neg' },
-      { type: 'prove', formula: '¬¬A → A', id: 'prove-neg1',
-        desc: 'Prove double-negation elimination using DNE (or ¬I and ¬E if you prefer classical reasoning).' },
+      { type: 'prove', formula: 'A → ¬¬A', id: 'prove-neg1',
+        desc: 'Prove double-negation introduction: if A is true, then ¬¬A (it is not the case that A is false).' },
       { type: 'prove', formula: '(A → B) → (A → ¬B) → ¬A', id: 'prove-neg2',
         desc: 'A trickier negation proof: if A implies B and A implies ¬B then ¬A.' },
     ],
@@ -3272,30 +3277,30 @@ const READ_CONTENT = {
       "It is sunny AND warm." To prove A ∧ B you need to prove both parts separately.</p>
       <div class="tut-formula-example">A ∧ B</div>
       <div class="tut-rule-box">
-        <h4>∧-INTRODUCTION (∧I)</h4>
+        <h4>∧-INTRODUCTION [∧I]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Prove A and B separately; combine them.</p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">A &nbsp;&nbsp; B</div>
             <div>A ∧ B</div>
           </div>
-          <div class="tut-rule-tag">∧I</div>
+          <div class="tut-rule-tag">[∧I]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>∧-ELIMINATION (∧E₁ and ∧E₂)</h4>
+        <h4>∧-ELIMINATION [∧E₁] and [∧E₂]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Extract either conjunct from A ∧ B.</p>
         <div class="tut-rule-line" style="gap:28px">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">A ∧ B</div>
             <div>A</div>
           </div>
-          <div class="tut-rule-tag">∧E₁</div>
+          <div class="tut-rule-tag">[∧E₁]</div>
           <div class="tut-rule-frac">
             <div class="tut-rule-top">A ∧ B</div>
             <div>B</div>
           </div>
-          <div class="tut-rule-tag">∧E₂</div>
+          <div class="tut-rule-tag">[∧E₂]</div>
         </div>
       </div>
       <p>The animation shows commutativity: from A ∧ B derive B ∧ A.</p>
@@ -3305,74 +3310,96 @@ const READ_CONTENT = {
     <div class="tut-read">
       <h3>What is Disjunction?</h3>
       <p>A disjunction <strong>A ∨ B</strong> means: "at least one of A or B is true". For example:
-      "It will rain OR it will snow." Proving a disjunction only requires proving one side.</p>
+      "It will rain OR it will snow." Proving a disjunction only requires proving one side —
+      but both sides could also be true. This is <em>inclusive</em> or (not exclusive): A ∨ B
+      holds when A is true, when B is true, or when both are.</p>
       <div class="tut-formula-example">A ∨ B</div>
       <div class="tut-rule-box">
-        <h4>∨-INTRODUCTION (∨I₁ and ∨I₂)</h4>
+        <h4>∨-INTRODUCTION [∨I₁] and [∨I₂]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Prove A (or B) to get A ∨ B.</p>
         <div class="tut-rule-line" style="gap:28px">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">A</div>
             <div>A ∨ B</div>
           </div>
-          <div class="tut-rule-tag">∨I₁</div>
+          <div class="tut-rule-tag">[∨I₁]</div>
           <div class="tut-rule-frac">
             <div class="tut-rule-top">B</div>
             <div>A ∨ B</div>
           </div>
-          <div class="tut-rule-tag">∨I₂</div>
+          <div class="tut-rule-tag">[∨I₂]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>∨-ELIMINATION (∨E, Proof by Cases)</h4>
-        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">If A ∨ B, and both A→C and B→C, then C.</p>
+        <h4>∨-ELIMINATION [∨E] (Proof by Cases)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          If you know A ∨ B but not which side holds, you need to handle both cases.
+          Show that C follows from A (case 1) and that C follows from B (case 2).
+          Since C holds either way, you can conclude C. Think of it like a fork in a road:
+          you don't know which path you're on, but if both paths lead to the same destination, you'll get there.
+        </p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">A ∨ B &nbsp;&nbsp; A → C &nbsp;&nbsp; B → C</div>
             <div>C</div>
           </div>
-          <div class="tut-rule-tag">∨E</div>
+          <div class="tut-rule-tag">[∨E]</div>
         </div>
       </div>
     </div>`,
 
   'read-neg': `
     <div class="tut-read">
-      <h3>Negation and Falsum</h3>
-      <p><strong>¬A</strong> means "A is false". <strong>⊥</strong> (falsum) represents an
-      outright contradiction — something that can never be true. From ⊥ you can derive anything.</p>
+      <h3>Negation and False</h3>
+      <p><strong>¬A</strong> means "A is false" — it is the negation of A.
+      <strong>⊥</strong> (read "bottom" or "false") represents an outright contradiction —
+      something that can never be true. In fact, ¬A is often defined as A → ⊥:
+      "if A were true, we'd get a contradiction."</p>
       <div class="tut-formula-example">¬A &nbsp;&nbsp;&nbsp; ⊥</div>
       <div class="tut-rule-box">
-        <h4>¬-INTRODUCTION (¬I)</h4>
-        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">Assume A; if you derive ⊥, then ¬A.</p>
+        <h4>¬-INTRODUCTION [¬I]</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          To prove ¬A, assume A as a hypothesis (just like [→I]) and derive a contradiction ⊥.
+          If assuming A leads to ⊥, then A cannot be true, so ¬A holds.
+          Wherever A appears as a leaf in the proof above, it can be cancelled using the hypothesis number (e.g. 1) — because at that point we know A is true: we assumed it in the [¬I] step.
+        </p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
-            <div class="tut-rule-top">[A]¹ ⋯ ⊥</div>
+            <div class="tut-rule-top">⊥</div>
             <div>¬A</div>
           </div>
-          <div class="tut-rule-tag">¬I¹</div>
+          <div class="tut-rule-tag">¹[¬I]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>¬-ELIMINATION (¬E)</h4>
-        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">From ¬A and A, derive ⊥ (contradiction).</p>
+        <h4>¬-ELIMINATION [¬E]</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          If you have both ¬A ("A is false") and A ("A is true"), that is a contradiction.
+          Two contradictory facts together give you ⊥. Think of it as catching a liar:
+          someone claims A is false, but you have proof that A is true — the two clash and you get ⊥.
+        </p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">¬A &nbsp;&nbsp; A</div>
             <div>⊥</div>
           </div>
-          <div class="tut-rule-tag">¬E</div>
+          <div class="tut-rule-tag">[¬E]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>⊥-ELIMINATION (⊥E, EX FALSO)</h4>
-        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">From ⊥ derive anything.</p>
+        <h4>⊥-ELIMINATION [⊥E] (EX FALSO)</h4>
+        <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
+          From ⊥ you can derive anything at all. Why? Because ⊥ means you have a contradiction,
+          and a contradiction can never actually happen. So saying "if ⊥ then C" is vacuously
+          true for any C — there is no situation where the premise holds but the conclusion fails.
+          This principle is known as <em>ex falso quodlibet</em> ("from falsehood, anything follows").
+        </p>
         <div class="tut-rule-line">
           <div class="tut-rule-frac">
             <div class="tut-rule-top">⊥</div>
             <div>A</div>
           </div>
-          <div class="tut-rule-tag">⊥E</div>
+          <div class="tut-rule-tag">[⊥E]</div>
         </div>
       </div>
     </div>`,
@@ -3400,7 +3427,7 @@ const READ_CONTENT = {
       "Every natural number is either even or odd." The variable x ranges over the entire domain.</p>
       <div class="tut-formula-example">∀x. P(x)</div>
       <div class="tut-rule-box">
-        <h4>∀-INTRODUCTION (∀I)</h4>
+        <h4>∀-INTRODUCTION [∀I]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
           Pick a <em>fresh</em> variable y (not free in the goal or any active hypothesis),
           prove P[x↦y], then generalise.
@@ -3410,11 +3437,11 @@ const READ_CONTENT = {
             <div class="tut-rule-top">P[x↦y]</div>
             <div>∀x. P(x)</div>
           </div>
-          <div class="tut-rule-tag">∀I</div>
+          <div class="tut-rule-tag">[∀I]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>∀-ELIMINATION (∀E)</h4>
+        <h4>∀-ELIMINATION [∀E]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
           Instantiate the universal with any term t.
         </p>
@@ -3423,7 +3450,7 @@ const READ_CONTENT = {
             <div class="tut-rule-top">∀x. P(x)</div>
             <div>P[x↦t]</div>
           </div>
-          <div class="tut-rule-tag">∀E</div>
+          <div class="tut-rule-tag">[∀E]</div>
         </div>
       </div>
       <p>Example: from ∀x. P(x), take t = a to get P(a).</p>
@@ -3436,7 +3463,7 @@ const READ_CONTENT = {
       "There exists a prime number greater than 100." You prove this by exhibiting a specific witness.</p>
       <div class="tut-formula-example">∃x. P(x)</div>
       <div class="tut-rule-box">
-        <h4>∃-INTRODUCTION (∃I)</h4>
+        <h4>∃-INTRODUCTION [∃I]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
           Choose a witness term t; prove P[x↦t]; conclude ∃x. P(x).
         </p>
@@ -3445,11 +3472,11 @@ const READ_CONTENT = {
             <div class="tut-rule-top">P[x↦t]</div>
             <div>∃x. P(x)</div>
           </div>
-          <div class="tut-rule-tag">∃I</div>
+          <div class="tut-rule-tag">[∃I]</div>
         </div>
       </div>
       <div class="tut-rule-box">
-        <h4>∃-ELIMINATION (∃E)</h4>
+        <h4>∃-ELIMINATION [∃E]</h4>
         <p style="color:var(--chalk-dim);font-size:.82rem;margin-bottom:8px">
           If ∃x. P(x) holds, take a fresh name y, assume P[x↦y] as hypothesis, and derive C.
           Then C follows without depending on the specific y.
@@ -3459,7 +3486,7 @@ const READ_CONTENT = {
             <div class="tut-rule-top">∃x. P(x) &nbsp;&nbsp; [P[x↦y]]¹ ⋯ C</div>
             <div>C</div>
           </div>
-          <div class="tut-rule-tag">∃E¹</div>
+          <div class="tut-rule-tag">¹[∃E]</div>
         </div>
       </div>
     </div>`,
@@ -3476,8 +3503,7 @@ const ANIMATIONS = {
     { delay: 800,  action: 'set-hyp-num', target: 'root', num: 1 },
     { delay: 600,  action: 'set-hyp-formula', target: 'root', formula: 'A' },
     { delay: 800,  action: 'set-formula', target: [0], formula: 'A' },
-    { delay: 600,  action: 'apply-rule', target: [0], rule: 'cancel' },
-    { delay: 600,  action: 'set-cancel', target: [0], num: 1 },
+    { delay: 800,  action: 'set-cancel', target: [0], num: 1 },
     { delay: 500,  action: 'done' },
   ],
   // A ∧ B → B ∧ A
@@ -3491,13 +3517,11 @@ const ANIMATIONS = {
     { delay: 700,  action: 'set-formula', target: [0,0], formula: 'B' },
     { delay: 700,  action: 'apply-rule', target: [0,0], rule: 'and-e-r' },
     { delay: 700,  action: 'set-formula', target: [0,0,0], formula: 'A ∧ B' },
-    { delay: 600,  action: 'apply-rule', target: [0,0,0], rule: 'cancel' },
     { delay: 600,  action: 'set-cancel', target: [0,0,0], num: 1 },
     // right branch = A
     { delay: 700,  action: 'set-formula', target: [0,1], formula: 'A' },
     { delay: 700,  action: 'apply-rule', target: [0,1], rule: 'and-e-l' },
     { delay: 700,  action: 'set-formula', target: [0,1,0], formula: 'A ∧ B' },
-    { delay: 600,  action: 'apply-rule', target: [0,1,0], rule: 'cancel' },
     { delay: 600,  action: 'set-cancel', target: [0,1,0], num: 1 },
     { delay: 500,  action: 'done' },
   ],
@@ -3510,7 +3534,6 @@ const ANIMATIONS = {
     { delay: 700,  action: 'apply-rule', target: [0], rule: 'or-e' },
     // premise 0: the disjunction
     { delay: 700,  action: 'set-formula', target: [0,0], formula: 'A ∨ B' },
-    { delay: 600,  action: 'apply-rule', target: [0,0], rule: 'cancel' },
     { delay: 600,  action: 'set-cancel', target: [0,0], num: 1 },
     // premise 1: A → B ∨ A
     { delay: 800,  action: 'set-formula', target: [0,1], formula: 'A → B ∨ A' },
@@ -3520,7 +3543,6 @@ const ANIMATIONS = {
     { delay: 700,  action: 'set-formula', target: [0,1,0], formula: 'B ∨ A' },
     { delay: 600,  action: 'apply-rule', target: [0,1,0], rule: 'or-i-r' },
     { delay: 600,  action: 'set-formula', target: [0,1,0,0], formula: 'A' },
-    { delay: 500,  action: 'apply-rule', target: [0,1,0,0], rule: 'cancel' },
     { delay: 500,  action: 'set-cancel', target: [0,1,0,0], num: 2 },
     // premise 2: B → B ∨ A
     { delay: 800,  action: 'set-formula', target: [0,2], formula: 'B → B ∨ A' },
@@ -3530,7 +3552,6 @@ const ANIMATIONS = {
     { delay: 700,  action: 'set-formula', target: [0,2,0], formula: 'B ∨ A' },
     { delay: 600,  action: 'apply-rule', target: [0,2,0], rule: 'or-i-l' },
     { delay: 600,  action: 'set-formula', target: [0,2,0,0], formula: 'B' },
-    { delay: 500,  action: 'apply-rule', target: [0,2,0,0], rule: 'cancel' },
     { delay: 500,  action: 'set-cancel', target: [0,2,0,0], num: 3 },
     { delay: 500,  action: 'done' },
   ],
@@ -3546,12 +3567,10 @@ const ANIMATIONS = {
     { delay: 700,  action: 'set-formula', target: [0,0,0], formula: '¬A' },
     { delay: 700,  action: 'apply-rule', target: [0,0,0], rule: 'and-e-r' },
     { delay: 600,  action: 'set-formula', target: [0,0,0,0], formula: 'A ∧ ¬A' },
-    { delay: 500,  action: 'apply-rule', target: [0,0,0,0], rule: 'cancel' },
     { delay: 500,  action: 'set-cancel', target: [0,0,0,0], num: 1 },
     { delay: 700,  action: 'set-formula', target: [0,0,1], formula: 'A' },
     { delay: 700,  action: 'apply-rule', target: [0,0,1], rule: 'and-e-l' },
     { delay: 600,  action: 'set-formula', target: [0,0,1,0], formula: 'A ∧ ¬A' },
-    { delay: 500,  action: 'apply-rule', target: [0,0,1,0], rule: 'cancel' },
     { delay: 500,  action: 'set-cancel', target: [0,0,1,0], num: 1 },
     { delay: 500,  action: 'done' },
   ],
@@ -3564,7 +3583,6 @@ const ANIMATIONS = {
     { delay: 700,  action: 'apply-rule', target: [0], rule: 'forall-e' },
     { delay: 700,  action: 'set-forall-e-term', target: [0], term: 'a' },
     { delay: 700,  action: 'set-formula', target: [0,0], formula: '∀x. P(x)' },
-    { delay: 600,  action: 'apply-rule', target: [0,0], rule: 'cancel' },
     { delay: 600,  action: 'set-cancel', target: [0,0], num: 1 },
     { delay: 500,  action: 'done' },
   ],
@@ -3577,7 +3595,6 @@ const ANIMATIONS = {
     { delay: 700,  action: 'apply-rule', target: [0], rule: 'exists-i' },
     { delay: 700,  action: 'set-exists-i-term', target: [0], term: 'a' },
     { delay: 700,  action: 'set-formula', target: [0,0], formula: 'P(a)' },
-    { delay: 600,  action: 'apply-rule', target: [0,0], rule: 'cancel' },
     { delay: 600,  action: 'set-cancel', target: [0,0], num: 1 },
     { delay: 500,  action: 'done' },
   ],
@@ -3746,13 +3763,17 @@ function closeTutorialPanel() {
   document.getElementById('tut-world-list').style.display = '';
   tutCurrentWorld = null;
   if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
+  // Go back to the main page
+  resetProof();
 }
 
 // ── Inline tree renderer (for animations inside the panel) ───────────────────
-function renderTreeInto(container, node) {
+function renderTreeInto(container, node, isMainCanvas) {
   container.innerHTML = '';
   container.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:100%';
+  let isFirst = true;
   function buildEl(n) {
+    const isRoot = isFirst; isFirst = false;
     const wrap = document.createElement('div');
     wrap.className = 'tree-branch';
     if (n.children && n.children.length > 0) {
@@ -3760,42 +3781,128 @@ function renderTreeInto(container, node) {
       childRow.className = 'branch-children';
       n.children.forEach(c => childRow.appendChild(buildEl(c)));
       wrap.appendChild(childRow);
-      const vline = document.createElement('div');
-      vline.className = 'vertical-line';
-      wrap.appendChild(vline);
+
       const hWrap = document.createElement('div');
       hWrap.className = 'horizontal-line-wrap';
-      if (n.rule) {
-        const rl = document.createElement('div');
-        rl.className = 'rule-label';
-        rl.textContent = n.rule;
-        hWrap.appendChild(rl);
-      }
       const hLine = document.createElement('div');
       hLine.className = 'horizontal-line';
       hWrap.appendChild(hLine);
+      if (n.rule && n.rule !== 'cancel') {
+        const rule = ruleById(n.rule);
+        const sym = rule ? rule.symbol : n.rule;
+        const rl = document.createElement('div');
+        rl.className = 'rule-label';
+        if (!isMainCanvas) {
+          rl.style.cssText = 'position:absolute;left:calc(100% + 6px);right:auto;top:50%;transform:translateY(-50%);white-space:nowrap';
+        }
+        if (n.hypNum) {
+          rl.innerHTML = `<sup style="font-size:.7em;vertical-align:super">${n.hypNum}</sup>[${sym}]`;
+        } else {
+          rl.textContent = `[${sym}]`;
+        }
+        hWrap.appendChild(rl);
+      }
       wrap.appendChild(hWrap);
+
+      const vLine = document.createElement('div');
+      vLine.className = 'vertical-line';
+      wrap.appendChild(vLine);
     }
     const card = document.createElement('div');
-    card.className = 'node-card' + (n.status === 'ok' ? ' node-ok' : n.status === 'err' ? ' node-err' : n.status === 'warn' ? ' node-warn' : '');
+    card.className = 'node-card'
+      + (isRoot ? ' node-root' : '')
+      + (n.status === 'ok' ? ' node-ok' : n.status === 'err' ? ' node-err' : n.status === 'warn' ? ' node-warn' : '')
+      + (!n.formula && !isRoot ? ' node-open' : '');
+
+    // Status dot
+    const dot = document.createElement('div');
+    const dotClass = n.status==='ok' ? 'dot-ok' : n.status==='err' ? 'dot-err' : n.status==='warn' ? 'dot-warn' : 'dot-pending';
+    dot.className = 'node-status-dot ' + dotClass;
+    card.appendChild(dot);
+
+    // Formula display
     const fd = document.createElement('div');
     fd.className = 'node-formula-display';
     fd.style.pointerEvents = 'none';
     fd.style.cursor = 'default';
-    fd.textContent = n.formula || '?';
+    if (n.cancelNum) {
+      fd.innerHTML = `<span style="text-decoration:overline">${n.formula || '?'}</span><sup style="font-size:.7em;vertical-align:super;margin-left:2px">${n.cancelNum}</sup>`;
+      card.style.borderColor = 'rgba(200,169,110,.45)';
+    } else {
+      fd.textContent = n.formula || '?';
+    }
     card.appendChild(fd);
+
+    // Hypothesis label (for rules with genHyp)
+    if (n.rule && ruleById(n.rule)?.genHyp && n.hypFormula) {
+      const sec = document.createElement('div');
+      sec.className = 'node-section';
+      sec.style.cssText = 'margin-top:6px;padding-top:6px;border-top:1px dashed var(--chalk-faint)';
+      const slbl = document.createElement('div');
+      slbl.className = 'node-section-label'; slbl.textContent = 'HYPOTHESIS';
+      const fdisp = document.createElement('div');
+      fdisp.className = 'node-formula-display';
+      fdisp.style.cssText = 'font-size:.82rem;pointer-events:none;cursor:default';
+      fdisp.textContent = n.hypFormula;
+      sec.appendChild(slbl); sec.appendChild(fdisp);
+      card.appendChild(sec);
+    }
+
+    // Cancel label
+    if (n.rule === 'cancel' && n.cancelNum) {
+      const sec = document.createElement('div');
+      sec.className = 'node-section';
+      sec.style.cssText = 'margin-top:6px;padding-top:6px;border-top:1px dashed var(--chalk-faint)';
+      const slbl = document.createElement('div');
+      slbl.className = 'node-section-label'; slbl.textContent = 'CANCEL #' + n.cancelNum;
+      sec.appendChild(slbl);
+      card.appendChild(sec);
+    }
+
     wrap.appendChild(card);
     return wrap;
   }
   if (node) container.appendChild(buildEl(node));
 }
 
-// playAnimation variant that calls a custom render function instead of renderTree()
-async function playAnimationInto(animId, statusEl, renderFn) {
+// playAnimation variant that works on a local tree (never touches global proofTree)
+async function playAnimationInto(animId, statusEl, localRoot, renderFn, hypsObj) {
   const script = ANIMATIONS[animId];
   if (!script) return;
   let cancelled = false;
   tutAnimController = { cancel: () => { cancelled = true; } };
+
+  const localHyps = hypsObj || {};
+
+  function resolveLocal(path) {
+    if (path === 'root') return localRoot;
+    let node = localRoot;
+    for (const idx of path) {
+      if (!node || !node.children[idx]) return null;
+      node = node.children[idx];
+    }
+    return node;
+  }
+
+  // Lightweight rule applier that works on the local tree only
+  function applyRuleLocal(node, ruleId) {
+    const rule = ruleById(ruleId);
+    if (!rule) return;
+    node.rule = ruleId;
+    node.status = rule.genHyp ? null : 'ok';
+    const before = node.children.length;
+    for (let i = before; i < before + rule.premises; i++) {
+      node.children.push({ id: nodeIdCounter++, formula: '', rule: null, children: [],
+        status: null, hypNum: null, hypFormula: null, cancelNum: null, isOpen: true,
+        isHypLeaf: false, forallETerm: null, forallVar: null, existsITerm: null });
+    }
+    if (rule.genHyp) {
+      let n = 1; while (localHyps[n]) n++;
+      node.hypNum = n;
+      node.hypFormula = '';
+      localHyps[n] = { formula: '', cancelled: false };
+    }
+  }
 
   function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -3805,30 +3912,35 @@ async function playAnimationInto(animId, statusEl, renderFn) {
     if (cancelled) return;
 
     if (step.action === 'done') {
+      // Mark all nodes as ok for the completed proof display
+      function markAllOk(n) { n.status = 'ok'; if (n.children) n.children.forEach(markAllOk); }
+      markAllOk(localRoot);
+      renderFn();
       if (statusEl) statusEl.textContent = '✓ Proof complete';
       tutAnimController = null;
       return;
     }
 
-    const node = resolveAnimTarget(step.target);
+    const node = resolveLocal(step.target);
     if (!node) continue;
 
     if (step.action === 'apply-rule') {
-      const oldShow = window.showFeedback;
-      window.showFeedback = () => {};
-      await applyRule(node, step.rule);
-      window.showFeedback = oldShow;
+      applyRuleLocal(node, step.rule);
     } else if (step.action === 'set-formula') {
       node.formula = step.formula;
-      animHandleFormulaChange(node);
+      node.isOpen = false;
+      node.status = 'warn';
     } else if (step.action === 'set-hyp-num') {
       node.hypNum = step.num;
     } else if (step.action === 'set-hyp-formula') {
-      if (!hypotheses[step.num]) hypotheses[step.num] = { formula: step.formula };
-      else hypotheses[step.num].formula = step.formula;
+      node.hypFormula = step.formula;
+      if (!localHyps[step.num]) localHyps[step.num] = { formula: step.formula, cancelled: false };
+      else localHyps[step.num].formula = step.formula;
     } else if (step.action === 'set-cancel') {
+      node.rule = 'cancel';
       node.cancelNum = step.num;
       node.status = 'ok';
+      if (localHyps[step.num]) localHyps[step.num].cancelled = true;
     } else if (step.action === 'set-forall-e-term') {
       node.forallETerm = step.term;
     } else if (step.action === 'set-exists-i-term') {
@@ -3836,9 +3948,7 @@ async function playAnimationInto(animId, statusEl, renderFn) {
     }
 
     renderFn();
-    if (statusEl && step.action !== 'done') {
-      statusEl.textContent = step.action.replace(/-/g,' ') + '…';
-    }
+    if (statusEl) statusEl.textContent = step.action.replace(/-/g,' ') + '…';
   }
 }
 
@@ -3852,6 +3962,16 @@ function openWorldPage(worldId) {
   if (tutAnimController) { tutAnimController.cancel(); tutAnimController = null; }
   tutProveWaiting = false;
 
+  // Reset the proof canvas to an empty state for the tutorial
+  resetProof();
+  // Hide the start-panel form and show an empty canvas
+  document.getElementById('start-panel').style.display = 'none';
+  const tc = document.getElementById('tree-container');
+  tc.style.display = 'flex';
+  tc.style.flexDirection = 'column';
+  tc.style.alignItems = 'center';
+  tc.innerHTML = '';
+
   document.getElementById('tut-world-list').style.display = 'none';
   const page = document.getElementById('tut-world-page');
   page.classList.add('open');
@@ -3862,6 +3982,7 @@ function openWorldPage(worldId) {
   body.scrollTop = 0;
 
   const proveDone = {};
+  let activeProveStep = null;
 
   // ── Reading section ──
   const readStep = world.steps.find(s => s.type === 'read');
@@ -3926,16 +4047,30 @@ function openWorldPage(worldId) {
       if (!ast) { animCanvas.textContent = 'Error: could not parse formula.'; playBtn.disabled = false; return; }
       const formulaStr = fmtAST(ast);
 
-      hypotheses = {}; nextHypNum = 1; nodeIdCounter = 0;
-      proofJustCompleted = false;
-      proofTree = newNode(formulaStr);
-      proofTree.status = 'warn';
-      if (timerInterval) clearInterval(timerInterval);
-      proofStartTime = null;
+      // Build a local tree for the animation
+      const localRoot = { id: 0, formula: formulaStr, rule: null, children: [],
+        status: 'warn', hypNum: null, cancelNum: null, isOpen: false,
+        forallETerm: null, forallVar: null, existsITerm: null };
 
-      renderTreeInto(animCanvas, proofTree);
+      // Show on the right-side main canvas as well
+      document.getElementById('start-panel').style.display = 'none';
+      const mainCanvas = document.getElementById('tree-container');
+      mainCanvas.style.display = 'flex'; mainCanvas.style.flexDirection = 'column'; mainCanvas.style.alignItems = 'center';
+      document.getElementById('resetBtn').style.display = 'none';
 
-      playAnimationInto(animStep.id, statusEl, () => renderTreeInto(animCanvas, proofTree)).then(() => {
+      renderTreeInto(animCanvas, localRoot, false);
+      renderTreeInto(mainCanvas, localRoot, true);
+
+      playAnimationInto(animStep.id, statusEl, localRoot, () => {
+        renderTreeInto(animCanvas, localRoot, false);
+        renderTreeInto(mainCanvas, localRoot, true);
+        // Scroll the tutorial page body so the top of the animation is visible
+        const pageBody = document.getElementById('tutPageBody');
+        if (pageBody && animWrap) {
+          const wrapTop = animWrap.offsetTop - pageBody.offsetTop;
+          pageBody.scrollTop = Math.max(0, wrapTop - 8);
+        }
+      }).then(() => {
         playBtn.disabled = false;
         playBtn.textContent = '↺ Replay';
       });
@@ -4002,10 +4137,14 @@ function openWorldPage(worldId) {
         loadBtn.textContent = '↺ Reload';
         statusEl.textContent = 'Working on canvas…';
 
+        // Track which step is active so only the correct poller marks done
+        activeProveStep = step.id;
         const stepId = step.id;
+        const expectedFormula = formulaStr;
         function checkCompletion() {
           if (tutCurrentWorld !== worldId) return;
-          if (proofTree && isProofComplete(proofTree)) {
+          if (activeProveStep !== stepId) return; // another step was loaded
+          if (proofTree && proofTree.formula === expectedFormula && isProofComplete(proofTree)) {
             proveDone[stepId] = true;
             statusEl.textContent = '✅ Complete!';
             statusEl.className = 'tut-prove-card-status done';
@@ -4034,6 +4173,7 @@ function openWorldPage(worldId) {
       const w = WORLDS.find(w => w.id === tutCurrentWorld);
       if (w) completeWorld(w);
     });
+
   }
 }
 
