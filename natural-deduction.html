@@ -1157,10 +1157,13 @@ function computeScore(formulaStr, elapsedSeconds) {
   const ast = tryParse(formulaStr);
   const connectives = ast ? countConnectives(ast) : 1;
   const dsf = ast ? distinctSubformulas(ast) : 1;
-  // Complexity = distinct subformulas × 30, minus a time penalty
+  // Complexity = distinct subformulas × 30
+  // Time penalty: free budget of dsf × 8 seconds, then √(overtime) × 5
   const complexity = dsf * 30;
-  const raw = complexity - elapsedSeconds * 2;
-  return { score: Math.max(1, Math.round(raw)), connectives, complexity, dsf, elapsedSeconds };
+  const budget = dsf * 8;
+  const overtime = Math.max(0, elapsedSeconds - budget);
+  const raw = complexity - 5 * Math.sqrt(overtime);
+  return { score: Math.max(1, Math.round(raw)), connectives, complexity, dsf, budget, elapsedSeconds };
 }
 
 function newNode(formula) {
@@ -3170,7 +3173,7 @@ function aggregateByStudent(entries) {
 
 const TAB_CONFIG = {
   score: {
-    desc:  'Best single proof score. Score = distinct subformulas × 30 − seconds × 2.',
+    desc:  'Best single proof score. Score = subformulas × 30 − 5 × √(overtime). Free time budget: subformulas × 8s.',
     sort:  (a,b) => b.bestScore - a.bestScore,
     value: s => s.bestScore,
     sub:   s => s.bestFormula,
