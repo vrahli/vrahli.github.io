@@ -110,7 +110,8 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .hyp-item{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .hyp-num{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);min-width:20px;font-weight:600}
 .hyp-formula{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--chalk-dim)}
-.hyp-cancelled{color:var(--accent);font-weight:600;text-shadow:0 0 10px color-mix(in srgb,var(--accent) 45%,transparent)}
+.hyp-item.hyp-in-scope .hyp-formula{color:var(--accent);font-weight:600;text-shadow:0 0 10px color-mix(in srgb,var(--accent) 45%,transparent)}
+.hyp-item.hyp-in-scope .hyp-num{color:var(--accent);text-shadow:0 0 8px color-mix(in srgb,var(--accent) 40%,transparent)}
 .hyp-empty{color:var(--chalk-faint);font-size:.85rem;font-style:italic;text-align:center;margin-top:20px}
 
 /* FEEDBACK */
@@ -1552,6 +1553,70 @@ function isProofComplete(node) {
 let proofJustCompleted = false; // guard so we only celebrate once
 let celebrationTimeout = null;  // so we can cancel if user resets quickly
 
+// ── Hypothesis-in-scope highlighting ──────────────────────────────────────
+// Walk from `node` toward the root, collecting hypNums from any
+// ancestor (including node itself) that introduces a hypothesis.
+function collectHypNumsInScope(node) {
+  const nums = new Set();
+  // Collect from the node itself if it introduces a hyp
+  if (node.hypNum) nums.add(node.hypNum);
+  // Walk down toward the root
+  let cur = node;
+  while (proofTree) {
+    const parent = findParent(proofTree, cur);
+    if (!parent) break;
+    if (parent.hypNum) nums.add(parent.hypNum);
+    cur = parent;
+  }
+  return nums;
+}
+
+// Find all cancel-leaf node cards in the DOM whose cancelNum is in `nums`
+function collectCancelLeafIds(root, nums) {
+  const ids = new Set();
+  function walk(n) {
+    if (n.rule === 'cancel' && n.cancelNum && nums.has(n.cancelNum)) ids.add(n.id);
+    // Also highlight hypothesis leaves (isHypLeaf) whose formula matches
+    // a hypothesis in scope — these are leaves like the ones from LEM
+    if (n.isHypLeaf && n.cancelNum && nums.has(n.cancelNum)) ids.add(n.id);
+    n.children.forEach(walk);
+  }
+  walk(root);
+  return ids;
+}
+
+// Also find open leaves (no rule, has formula) that could use a hypothesis
+// — i.e. leaves above a node where hypotheses are in scope
+function collectLeavesAbove(root, targetNode) {
+  // Collect all leaf nodes that are descendants of targetNode
+  // (above it in the proof tree = its children subtrees)
+  const ids = new Set();
+  function walk(n) {
+    if (n.children.length === 0 && (n.rule === 'cancel' || n.isHypLeaf)) ids.add(n.id);
+    n.children.forEach(walk);
+  }
+  targetNode.children.forEach(c => walk(c));
+  return ids;
+}
+
+function highlightHypsInScope(node, on) {
+  const nums = collectHypNumsInScope(node);
+  if (nums.size === 0) return;
+  // Find cancel leaves and hyp leaves whose cancelNum matches
+  const cancelIds = collectCancelLeafIds(proofTree, nums);
+  // Highlight the hypothesis items in the side panel
+  const panel = document.getElementById('hyp-list');
+  if (panel) {
+    panel.querySelectorAll('.hyp-item').forEach(item => {
+      const numEl = item.querySelector('.hyp-num');
+      if (numEl && nums.has(Number(numEl.textContent))) {
+        if (on) item.classList.add('hyp-in-scope');
+        else    item.classList.remove('hyp-in-scope');
+      }
+    });
+  }
+}
+
 function buildNodeElement(node, isRoot) {
   const branch = document.createElement('div');
   branch.className = 'tree-branch';
@@ -1594,11 +1659,16 @@ function buildNodeElement(node, isRoot) {
 function buildNodeCard(node, isRoot) {
   const card = document.createElement('div');
   card.className = 'node-card';
+  card.dataset.nodeId = node.id;
   if (isRoot)              card.classList.add('node-root');
   if (node.isOpen)         card.classList.add('node-open');
   if (node.status==='ok')  card.classList.add('node-ok');
   if (node.status==='warn')card.classList.add('node-warn');
   if (node.status==='err') card.classList.add('node-err');
+
+  // Hover: highlight hypothesis leaves in scope
+  card.addEventListener('mouseenter', () => highlightHypsInScope(node, true));
+  card.addEventListener('mouseleave', () => highlightHypsInScope(node, false));
 
   // Status dot
   const dot = document.createElement('div');
@@ -1634,8 +1704,8 @@ function buildNodeCard(node, isRoot) {
     card.appendChild(disp);
   }
 
-  // Hint button for blank premise nodes
-  if (node.isOpen && !isRoot) {
+  // Hint button for blank premise nodes (hide once the node is validated)
+  if (node.isOpen && !isRoot && node.status !== 'ok') {
     const parent = findParent(proofTree, node);
     if (parent && parent.rule) {
       const idx  = parent.children.indexOf(node);
@@ -1676,18 +1746,20 @@ function buildNodeCard(node, isRoot) {
     row.appendChild(nlbl); row.appendChild(numInp); row.appendChild(fInp);
     sec.appendChild(row);
 
-    const hb2 = document.createElement('button');
-    hb2.className='hint-btn'; hb2.textContent='💡 Hint';
-    hb2.addEventListener('click', () => {
-      const ast=tryParse(node.formula);
-      let hint='';
-      if (node.rule==='imp-i'&&ast?.op==='IMP') hint=fmtAST(ast.left);
-      else if (node.rule==='neg-i'&&ast?.op==='NEG') hint=fmtAST(ast.sub);
-      showFeedback('info','Hypothesis hint', hint
-        ? `When applying ${ruleById(node.rule)?.label} to ${fmtAST(ast)}, assume: ${hint}`
-        : 'The hypothesis is the antecedent (for →I) or the formula being negated (for ¬I).');
-    });
-    sec.appendChild(hb2);
+    if (node.status !== 'ok') {
+      const hb2 = document.createElement('button');
+      hb2.className='hint-btn'; hb2.textContent='💡 Hint';
+      hb2.addEventListener('click', () => {
+        const ast=tryParse(node.formula);
+        let hint='';
+        if (node.rule==='imp-i'&&ast?.op==='IMP') hint=fmtAST(ast.left);
+        else if (node.rule==='neg-i'&&ast?.op==='NEG') hint=fmtAST(ast.sub);
+        showFeedback('info','Hypothesis hint', hint
+          ? `When applying ${ruleById(node.rule)?.label} to ${fmtAST(ast)}, assume: ${hint}`
+          : 'The hypothesis is the antecedent (for →I) or the formula being negated (for ¬I).');
+      });
+      sec.appendChild(hb2);
+    }
     card.appendChild(sec);
   }
 
@@ -1844,19 +1916,21 @@ function buildNodeCard(node, isRoot) {
     sec.appendChild(hypRow);
 
     // Hint button
-    const hintBtn = document.createElement('button');
-    hintBtn.className='hint-btn'; hintBtn.textContent='💡 Hint';
-    hintBtn.addEventListener('click', () => {
-      const p0 = node.children[0]?.formula ? tryParse(node.children[0].formula) : null;
-      const y  = node.existsEVar;
-      if (p0?.op==='EXISTS' && y) {
-        const hyp = subst(p0.body, p0.var, {op:'VAR',name:y});
-        showFeedback('info','Hypothesis hint',`The hypothesis is ${fmtAST(hyp)} (substituting ${p0.var}↦${y} in the body of premise 1).`);
-      } else {
-        showFeedback('info','Hypothesis hint','Fill in y and premise 1 (∃x. P) first — the hypothesis will be P[x↦y].');
-      }
-    });
-    sec.appendChild(hintBtn);
+    if (node.status !== 'ok') {
+      const hintBtn = document.createElement('button');
+      hintBtn.className='hint-btn'; hintBtn.textContent='💡 Hint';
+      hintBtn.addEventListener('click', () => {
+        const p0 = node.children[0]?.formula ? tryParse(node.children[0].formula) : null;
+        const y  = node.existsEVar;
+        if (p0?.op==='EXISTS' && y) {
+          const hyp = subst(p0.body, p0.var, {op:'VAR',name:y});
+          showFeedback('info','Hypothesis hint',`The hypothesis is ${fmtAST(hyp)} (substituting ${p0.var}↦${y} in the body of premise 1).`);
+        } else {
+          showFeedback('info','Hypothesis hint','Fill in y and premise 1 (∃x. P) first — the hypothesis will be P[x↦y].');
+        }
+      });
+      sec.appendChild(hintBtn);
+    }
     card.appendChild(sec);
   }
 
@@ -2611,9 +2685,8 @@ function updateHypPanel() {
     const h=hypotheses[n];
     const item=document.createElement('div'); item.className='hyp-item';
     const ne=document.createElement('span'); ne.className='hyp-num'; ne.textContent=n;
-    const fe=document.createElement('span'); fe.className='hyp-formula'+(h.cancelled?' hyp-cancelled':'');
+    const fe=document.createElement('span'); fe.className='hyp-formula';
     fe.textContent=renderFormula(h.formula);
-    if (h.cancelled) fe.title='Discharged';
     item.appendChild(ne); item.appendChild(fe);
     list.appendChild(item);
   });
