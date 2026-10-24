@@ -20,10 +20,20 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 #app{position:relative;z-index:1}
 
 /* HEADER */
-header{padding:18px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,rgba(30,36,54,.95) 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+header{padding:18px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,color-mix(in srgb,var(--bg2) 95%,transparent) 0%,transparent 100%);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
 header h1{font-family:'Cinzel',serif;font-size:1.25rem;letter-spacing:.05em;color:var(--accent)}
 header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--chalk-dim);letter-spacing:.1em}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.theme-wrap{position:relative}
+#themePopup{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:12px 14px;box-shadow:var(--shadow);z-index:300;display:none;width:236px}
+#themePopup.open{display:block}
+#themePopup h3{font-family:'Cinzel',serif;font-size:.72rem;color:var(--accent2);letter-spacing:.08em;margin-bottom:10px}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.theme-swatch{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer;color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.6rem}
+.theme-swatch span.sw{width:38px;height:38px;border-radius:50%;border:2px solid var(--node-border);box-shadow:inset 0 0 0 6px rgba(255,255,255,.04)}
+.theme-swatch:hover span.sw{border-color:var(--accent2)}
+.theme-swatch.current span.sw{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,169,110,.25)}
+.theme-swatch.current{color:var(--accent)}
 .hyp-panel-toggle{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--bg3);border:1px solid var(--node-border);color:var(--chalk-dim);padding:6px 14px;border-radius:4px;cursor:pointer;transition:all .2s}
 .hyp-panel-toggle:hover{color:var(--accent2);border-color:var(--accent2)}
 
@@ -309,6 +319,63 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 .help-bar-btn.active{border-color:var(--accent);box-shadow:0 0 20px rgba(200,170,110,.25),0 0 8px rgba(200,170,110,.12)}
 .help-bar-btn.active .help-q{color:var(--accent)}
 .help-bar-btn.active .help-label{color:var(--accent)}
+.help-bar-btn.doodle-btn .help-q{font-size:1.15rem;color:var(--accent2)}
+
+/* ── Doodle (proof planning sketch) ─────────────────────────────────────── */
+#doodle-modal{position:fixed;inset:0;z-index:420;display:none;align-items:center;justify-content:center}
+#doodle-modal.open{display:flex}
+.doodle-box{position:relative;background:var(--bg2);border:1px solid var(--node-border);border-radius:12px;width:min(1100px,96vw);height:min(86vh,900px);display:flex;flex-direction:column;box-shadow:var(--shadow);z-index:1;overflow:hidden}
+.dd-head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dd-head h2{font-family:'Cinzel',serif;font-size:1rem;color:var(--accent);letter-spacing:.06em;flex:1;min-width:120px}
+.dd-tool{background:none;border:1px solid var(--node-border);color:var(--chalk-dim);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:6px 10px;border-radius:5px;cursor:pointer}
+.dd-tool:hover:not(:disabled){border-color:var(--accent2);color:var(--accent2)}
+.dd-tool:disabled{opacity:.4;cursor:default}
+.dd-close{background:none;border:none;color:var(--chalk-faint);cursor:pointer;font-size:1.1rem;padding:4px 6px}
+.dd-status{padding:9px 16px;font-size:.92rem;color:var(--chalk-dim);border-bottom:1px solid var(--line);min-height:2.6em;line-height:1.45}
+.dd-status.done{color:var(--green)}
+.dd-status.warn{color:var(--yellow)}
+#ddScroll{flex:1;overflow:auto;padding:18px 22px 40px}
+#ddCanvas{position:relative;width:max-content;min-width:100%;user-select:none;-webkit-user-select:none}
+#ddWires{position:absolute;left:0;top:0;pointer-events:none;overflow:visible;z-index:0}
+/* Boxes sit above the wires; the lane areas let clicks through to the wires */
+#ddCanvas>.dd-lane{position:relative;z-index:1}
+.dd-lane{pointer-events:none}
+.dd-box{pointer-events:auto}
+#ddWires path.hit{pointer-events:stroke;cursor:pointer}
+#ddWires path.ok{stroke:var(--accent2);filter:drop-shadow(0 0 4px rgba(126,200,200,.55))}
+#ddWires path.pending{stroke:var(--yellow);stroke-dasharray:6 4}
+#ddWires path.bad{stroke:var(--red);stroke-dasharray:4 4;opacity:.75}
+#ddWires path.temp{stroke:var(--chalk-dim);stroke-dasharray:3 4}
+.dd-lane{border-radius:10px;padding:8px}
+.dd-cases>.dd-lane{border:1px dashed var(--line);background:rgba(255,255,255,.015)}
+.dd-cols{display:grid;grid-template-columns:minmax(120px,max-content) minmax(120px,max-content);justify-content:start;gap:14px 96px;align-items:start}
+.dd-col-h{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--chalk-faint);margin-bottom:8px}
+.dd-empty{font-size:.8rem;color:var(--chalk-faint);font-style:italic}
+.dd-tree{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.dd-kids{margin:8px 0 0 14px;padding-left:12px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.dd-box{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--node-bg);border:1px solid var(--node-border);border-radius:7px;padding:6px 14px 6px 10px;font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--chalk);cursor:pointer;user-select:none;-webkit-user-select:none;white-space:nowrap}
+.dd-box:hover{border-color:var(--accent)}
+.dd-box.known{border-left:3px solid var(--accent2)}
+.dd-box.goal{border-left:3px solid var(--yellow)}
+.dd-mark{font-weight:700;color:var(--yellow)}
+.dd-box.goal.done{border-color:var(--green);border-left-color:var(--green)}
+.dd-box.goal.done .dd-mark{color:var(--green)}
+.dd-box.pending{border-style:dashed;opacity:.7}
+.dd-box.split{opacity:.55}
+.dd-box.wire-target{box-shadow:0 0 0 2px var(--accent2)}
+.dd-num{font-size:.68rem;color:var(--bg);background:var(--accent2);border-radius:50%;min-width:18px;height:18px;padding:0 4px;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+.dd-tag{font-size:.64rem;color:var(--chalk-faint);margin-left:2px}
+.dd-handle{position:absolute;right:-8px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--accent2);border:2px solid var(--bg2);cursor:crosshair;touch-action:none}
+.dd-handle:hover,.dd-handle.armed{box-shadow:0 0 0 5px rgba(126,200,200,.3)}
+.dd-cases{display:flex;gap:16px;margin-top:18px;align-items:flex-start}
+.dd-case-h{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent2);margin-bottom:8px}
+@media (max-width:640px){
+  .doodle-box{width:100vw;height:100dvh;border-radius:0;border:none}
+  .dd-cols{gap:12px 44px;grid-template-columns:minmax(90px,max-content) minmax(90px,max-content)}
+  .dd-cases{flex-direction:column}
+  .dd-box{font-size:.8rem}
+  #ddScroll{padding:14px 16px 40px}
+}
 #help-popup{position:fixed;bottom:82px;left:24px;width:320px;background:var(--bg2);border:1px solid var(--node-border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow);z-index:249;display:none;font-size:.88rem}
 #help-popup.open{display:block}
 #help-popup h3{font-family:'Cinzel',serif;font-size:.8rem;color:var(--accent2);letter-spacing:.08em;margin-bottom:12px}
@@ -375,7 +442,14 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
     </div>
     <div class="header-right">
       <div class="timer-display" id="timerDisplay">0:00</div>
-      <button class="history-btn" id="historyBtn">⏱ History</button>
+      <div class="theme-wrap">
+        <button class="history-btn" id="themeBtn" title="Change the background colour" aria-label="Change the background colour" aria-haspopup="true">🎨</button>
+        <div id="themePopup" role="menu">
+          <h3>BACKGROUND</h3>
+          <div class="theme-grid" id="themeGrid"></div>
+        </div>
+      </div>
+      <button class="history-btn" id="historyBtn" title="Proof history" aria-label="Proof history">📜</button>
       <button class="history-btn" id="leaderboardBtn">🏆 Leaderboard</button>
       <button class="tutorial-toggle" id="tutorialToggle">🎓 Tutorial</button>
       <button class="reset-btn" id="resetBtn" style="display:none">↺ New Proof</button>
@@ -467,6 +541,22 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 <div class="help-bar" id="helpBar">
   <button class="help-bar-btn" id="syntaxBtn" title="Input syntax reference"><span class="help-q">?</span><span class="help-label">Syntax</span></button>
   <button class="help-bar-btn" id="rulesBtn" title="Inference rules reference"><span class="help-q">?</span><span class="help-label">Rules</span></button>
+  <button class="help-bar-btn doodle-btn" id="doodleBtn" title="Doodle: sketch a plan for your proof"><span class="help-q">✎</span><span class="help-label">Doodle</span></button>
+</div>
+
+<!-- Doodle: a planning sketch, separate from the proof tree -->
+<div id="doodle-modal">
+  <div class="history-backdrop" id="ddBackdrop"></div>
+  <div class="doodle-box" role="dialog" aria-label="Proof doodle">
+    <div class="dd-head">
+      <h2>Doodle</h2>
+      <button class="dd-tool" id="ddUndo">↶ Undo</button>
+      <button class="dd-tool" id="ddClear">Clear</button>
+      <button class="dd-close" id="ddClose" title="Close (your doodle is kept)">✕</button>
+    </div>
+    <div class="dd-status" id="ddStatus"></div>
+    <div id="ddScroll"><div id="ddCanvas"></div></div>
+  </div>
 </div>
 <div id="help-popup">
   <h3>SYNTAX GUIDE</h3>
@@ -1034,6 +1124,47 @@ function lsSet(key, value) {
 function lsClear(key) {
   try { localStorage.removeItem(key); } catch(e) {}
 }
+
+// ── Background themes ─────────────────────────────────────────────────────
+// Only the background family changes; text and accent colours stay the same,
+// so every theme keeps the same contrast as the original.
+const LS_THEME = 'nd_theme';
+const THEMES = {
+  midnight:  { name: 'Midnight',  bg: '#1a1f2e', bg2: '#222838', bg3: '#2a3045', node: '#252b3d', border: '#3e4868', line: '#3a4060' },
+  indigo:    { name: 'Indigo',    bg: '#1b1b33', bg2: '#222240', bg3: '#2a2a4d', node: '#252545', border: '#40406a', line: '#38385e' },
+  ocean:     { name: 'Ocean',     bg: '#12212b', bg2: '#182a36', bg3: '#1f3442', node: '#1b2f3c', border: '#335166', line: '#2c475a' },
+  chalk:     { name: 'Chalkboard',bg: '#18241f', bg2: '#1f2d27', bg3: '#273830', node: '#22322b', border: '#3a5246', line: '#34493e' },
+  moss:      { name: 'Moss',      bg: '#1f2118', bg2: '#272a1e', bg3: '#303426', node: '#2a2d21', border: '#474d38', line: '#3e4331' },
+  charcoal:  { name: 'Charcoal',  bg: '#1b1b1d', bg2: '#232326', bg3: '#2c2c30', node: '#262629', border: '#424248', line: '#39393e' },
+  plum:      { name: 'Plum',      bg: '#221b2a', bg2: '#2a2233', bg3: '#332a3e', node: '#2e2538', border: '#4a3c58', line: '#423651' },
+  burgundy:  { name: 'Burgundy',  bg: '#261a1d', bg2: '#2f2024', bg3: '#39282d', node: '#322327', border: '#553b42', line: '#4a333a' },
+  espresso:  { name: 'Espresso',  bg: '#231c18', bg2: '#2c231e', bg3: '#362b25', node: '#30261f', border: '#52423a', line: '#483a32' },
+};
+
+function applyTheme(id) {
+  const t = THEMES[id] || THEMES.midnight;
+  const r = document.documentElement.style;
+  r.setProperty('--bg', t.bg); r.setProperty('--bg2', t.bg2); r.setProperty('--bg3', t.bg3);
+  r.setProperty('--node-bg', t.node); r.setProperty('--node-border', t.border); r.setProperty('--line', t.line);
+  document.querySelectorAll('.theme-swatch').forEach(b => b.classList.toggle('current', b.dataset.theme === id));
+}
+
+(function setUpThemes() {
+  const grid = document.getElementById('themeGrid');
+  const popup = document.getElementById('themePopup');
+  const btn = document.getElementById('themeBtn');
+  Object.entries(THEMES).forEach(([id, t]) => {
+    const b = document.createElement('button');
+    b.className = 'theme-swatch'; b.dataset.theme = id; b.type = 'button';
+    b.innerHTML = `<span class="sw" style="background:${t.bg}"></span>${t.name}`;
+    b.addEventListener('click', () => { applyTheme(id); lsSet(LS_THEME, id); });
+    grid.appendChild(b);
+  });
+  applyTheme(lsGet(LS_THEME) || 'midnight');
+  btn.addEventListener('click', e => { e.stopPropagation(); popup.classList.toggle('open'); });
+  document.addEventListener('click', e => { if (!popup.contains(e.target) && e.target !== btn) popup.classList.remove('open'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') popup.classList.remove('open'); });
+})();
 
 // Progress: { completedWorlds: string[], badges: string[] }
 function loadProgress() {
@@ -2816,6 +2947,488 @@ document.getElementById('hypToggle').addEventListener('click', () => {
   btn.textContent=panel.classList.contains('hidden')?'Hypotheses ▶':'Hypotheses ◀';
 });
 
+// ═══════════════════════════════════════════
+//  DOODLE — a planning sketch beside the proof
+// ═══════════════════════════════════════════
+//
+// Goals (?) are what you still need; knowns are what you may use. Clicking a
+// goal breaks it down the way its introduction rule would; clicking a known
+// shows what its elimination rule gives. Only clicks create boxes, so every box
+// is justified. Wires connect a known to a goal and light up when they match.
+// Knowns obey scope: a hypothesis only reaches goals above the step that made
+// it, and a case of A ∨ B only reaches goals in that case's lane.
+// Propositional only; quantified formulas can be wired but not broken down.
+
+let doodle = null;      // the sketch for the current proof
+let ddMsg = null;       // { text, kind } shown in the status line after an action
+let ddArmed = null;     // known id waiting for a goal (tap-to-wire)
+let ddDrag = null;      // { from, path } while dragging a wire
+
+const ddBox = id => doodle.boxes[id];
+const ddAst = b => tryParse(b.f);
+
+function ddNew(formula) {
+  doodle = { formula, boxes: {}, lanes: {}, wires: [], nextId: 1, nextNum: 1, nextLane: 1, history: [] };
+  doodle.lanes[0] = { id: 0, parent: null, children: [], split: false };
+  doodle.root = ddAdd({ kind: 'goal', f: formula, lane: 0 });
+  ddMsg = null; ddArmed = null;
+}
+
+function ddAdd(props) {
+  const id = doodle.nextId++;
+  doodle.boxes[id] = { id, parent: null, children: [], expanded: false, ...props };
+  if (props.parent) ddBox(props.parent).children.push(id);
+  return id;
+}
+
+function ddSave() {
+  const { history, ...state } = doodle;
+  history.push(JSON.stringify(state));
+  if (history.length > 200) history.shift();
+}
+
+function ddUndo() {
+  if (!doodle || !doodle.history.length) return;
+  const history = doodle.history;
+  doodle = { ...JSON.parse(history.pop()), history };
+  ddMsg = null; ddArmed = null;
+  ddRender();
+}
+
+// ── Scope and status ──────────────────────────────────────────────────────
+
+function ddLaneWithin(outer, lane) {
+  for (let l = lane; l != null; l = doodle.lanes[l].parent) if (l === outer) return true;
+  return false;
+}
+
+// Does known k (or a known it was derived from) wait on this goal?
+function ddDependsOn(k, goalId) {
+  for (let b = k; b && b.kind === 'known'; b = b.parent ? ddBox(b.parent) : null)
+    if (b.needs === goalId) return true;
+  return false;
+}
+
+// Is the goal inside the region where scopeId's hypotheses are available?
+// A goal created to use a known — A? for A → C — has to be proved wherever
+// C is actually used, so it sits under the goals C is wired to (all of them,
+// if C is used more than once). Until C is wired anywhere, it sits where
+// A → C itself was available.
+function ddGoalWithin(goalId, scopeId, seen = new Set()) {
+  if (scopeId == null || goalId === scopeId) return true;
+  if (goalId == null || seen.has(goalId)) return false;
+  seen.add(goalId);
+  const g = ddBox(goalId);
+  const parent = g.parent ? ddBox(g.parent) : null;
+  if (parent && parent.kind === 'goal') return ddGoalWithin(parent.id, scopeId, seen);
+  if (parent && parent.kind === 'known') {
+    const uses = doodle.wires.filter(w => ddDependsOn(ddBox(w.from), goalId)).map(w => w.to);
+    if (uses.length) return uses.every(u => ddGoalWithin(u, scopeId, new Set(seen)));
+  }
+  return ddGoalWithin(g.ctx ?? null, scopeId, seen);
+}
+
+// A known derived through A → C (or ¬A) is only usable once A is proved.
+function ddKnownReady(k, visiting) {
+  for (let b = k; b && b.kind === 'known'; b = b.parent ? ddBox(b.parent) : null) {
+    if (b.needs && !ddGoalDone(b.needs, visiting)) return false;
+  }
+  return true;
+}
+
+// Why a wire doesn't (yet) prove its goal, or null if it does.
+function ddWireProblem(w, visiting = new Set()) {
+  const k = ddBox(w.from), g = ddBox(w.to);
+  if (!ddLaneWithin(k.lane, g.lane)) return 'This known belongs to a different case.';
+  if (!ddGoalWithin(g.id, k.scope)) return k.num
+    ? `Hypothesis ${k.num} is not available here: it only covers the goals above where it was assumed.`
+    : 'This known depends on a hypothesis that is not available here.';
+  const ka = ddAst(k), ga = ddAst(g);
+  if (!(ka && ga && (ka.op === 'BOT' || astEqual(ka, ga)))) return `${k.f} is not the same formula as ${g.f}.`;
+  if (!ddKnownReady(k, visiting)) return 'Matches, but this known still depends on a goal that is not done yet.';
+  return null;
+}
+
+function ddGoalDone(id, visiting = new Set()) {
+  if (visiting.has(id)) return false;            // circular reasoning proves nothing
+  visiting.add(id);
+  const g = ddBox(id);
+  let done = doodle.wires.some(w => w.to === id && !ddWireProblem(w, visiting));
+  if (!done && g.copies) done = g.copies.every(c => ddGoalDone(c, visiting));
+  if (!done && g.expanded) {
+    const sub = g.children.filter(c => ddBox(c).kind === 'goal');
+    done = g.via === 'or' ? sub.some(c => ddGoalDone(c, visiting))
+                          : sub.length > 0 && sub.every(c => ddGoalDone(c, visiting));
+  }
+  visiting.delete(id);
+  return done;
+}
+
+// ── Clicking boxes ────────────────────────────────────────────────────────
+
+function ddSay(text, kind = '') { ddMsg = { text, kind }; }
+
+function ddClickGoal(g) {
+  if (ddArmed) { ddConnect(ddArmed, g.id); return; }
+  const a = ddAst(g);
+  if (g.copies) return ddSay('This goal was split into cases: work on its copies in the case lanes below.');
+  if (g.expanded) return ddSay('Already broken down. Use Undo to take a step back.');
+  if (!a) return;
+  const child = (f, extra = {}) => ddAdd({ kind: 'goal', f, lane: g.lane, parent: g.id, ...extra });
+  switch (a.op) {
+    case 'AND':
+      ddSave(); g.expanded = true; g.via = 'and';
+      child(fmtAST(a.left)); child(fmtAST(a.right));
+      return ddSay(`To prove ${g.f}, prove both parts.`);
+    case 'IMP': {
+      ddSave(); g.expanded = true; g.via = 'imp';
+      const c = child(fmtAST(a.right));
+      const num = doodle.nextNum++;
+      ddAdd({ kind: 'known', f: fmtAST(a.left), lane: g.lane, parent: g.id, num, scope: c });
+      return ddSay(`To prove ${g.f}, assume ${fmtAST(a.left)} (hypothesis ${num}) and prove ${fmtAST(a.right)}.`);
+    }
+    case 'NEG': {
+      ddSave(); g.expanded = true; g.via = 'neg';
+      const c = child('⊥');
+      const num = doodle.nextNum++;
+      ddAdd({ kind: 'known', f: fmtAST(a.sub), lane: g.lane, parent: g.id, num, scope: c });
+      return ddSay(`To prove ${g.f}, assume ${fmtAST(a.sub)} (hypothesis ${num}) and reach a contradiction, ⊥.`);
+    }
+    case 'OR':
+      ddSave(); g.expanded = true; g.via = 'or';
+      child(fmtAST(a.left), { alt: 'either' }); child(fmtAST(a.right), { alt: 'or' });
+      return ddSay(`To prove ${g.f}, prove either side — whichever you can.`);
+    case 'BOT':
+      return ddSay('⊥ can’t be broken down: find a contradiction — a known ¬A and a known A. Click the ¬A known.');
+    case 'ATOM':
+      return ddSay(`${g.f} can’t be broken down: drag a wire from a known ${g.f} to it.`);
+    default:
+      return ddSay('Quantifiers aren’t supported in the doodle yet: wire a matching known to it.');
+  }
+}
+
+function ddClickKnown(k) {
+  if (ddArmed) { ddArmed = null; return ddSay('Wiring cancelled.'); }
+  const a = ddAst(k);
+  if (k.expanded) return ddSay('Already used. Use Undo to take a step back.');
+  if (!a) return;
+  const derived = (f, extra = {}) => ddAdd({ kind: 'known', f, lane: k.lane, parent: k.id, scope: k.scope, ...extra });
+  const needGoal = f => ddAdd({ kind: 'goal', f, lane: k.lane, parent: k.id, ctx: k.scope ?? doodle.root });
+  switch (a.op) {
+    case 'AND':
+      ddSave(); k.expanded = true;
+      derived(fmtAST(a.left)); derived(fmtAST(a.right));
+      return ddSay(`From ${k.f} you get both parts.`);
+    case 'IMP': {
+      ddSave(); k.expanded = true;
+      const need = needGoal(fmtAST(a.left));
+      derived(fmtAST(a.right), { needs: need });
+      return ddSay(`${k.f} gives ${fmtAST(a.right)}, once you prove ${fmtAST(a.left)}.`);
+    }
+    case 'NEG': {
+      ddSave(); k.expanded = true;
+      const need = needGoal(fmtAST(a.sub));
+      derived('⊥', { needs: need });
+      return ddSay(`${k.f} gives ⊥ (a contradiction), once you prove ${fmtAST(a.sub)}.`);
+    }
+    case 'OR': return ddSplit(k, a);
+    case 'BOT':
+      return ddSay('⊥ is known: wire it to any goal — from a contradiction, anything follows.');
+    case 'ATOM':
+      return ddSay(`${k.f} can’t be broken down: drag from its dot to a goal ${k.f}.`);
+    default:
+      return ddSay('Quantifiers aren’t supported in the doodle yet: wire it as a whole.');
+  }
+}
+
+// A known A ∨ B splits its lane into two cases. Each case knows one side and
+// gets a copy of every open goal it could help with; a goal is then proved
+// when all its copies are.
+function ddSplit(k, a) {
+  const lane = doodle.lanes[k.lane];
+  if (lane.split) return ddSay('This area is already split into cases. Split again inside one of the cases.');
+  const open = Object.values(doodle.boxes).filter(g =>
+    g.kind === 'goal' && g.lane === k.lane && !g.expanded && !g.copies &&
+    ddGoalWithin(g.id, k.scope) && !ddGoalDone(g.id));
+  if (!open.length) return ddSay(`There is no open goal here for ${k.f} to help with.`);
+  ddSave(); k.expanded = true; lane.split = true;
+  const sides = [fmtAST(a.left), fmtAST(a.right)];
+  const copies = new Map(open.map(g => [g.id, []]));
+  sides.forEach(f => {
+    const lid = doodle.nextLane++;
+    doodle.lanes[lid] = { id: lid, parent: k.lane, children: [], split: false };
+    lane.children.push(lid);
+    const num = doodle.nextNum++;
+    ddAdd({ kind: 'known', f, lane: lid, parent: k.id, num, scope: k.scope, caseOf: k.f });
+    doodle.lanes[lid].label = `Case ${num}: ${f}`;
+    open.forEach(g => copies.get(g.id).push(ddAdd({ kind: 'goal', f: g.f, lane: lid, ctx: g.id })));
+  });
+  open.forEach(g => { g.copies = copies.get(g.id); });
+  ddSay(`${k.f}: you don’t know which side holds, so prove the goal${open.length > 1 ? 's' : ''} in both cases.`);
+}
+
+function ddConnect(from, to) {
+  ddArmed = null;
+  if (doodle.wires.some(w => w.from === from && w.to === to)) return ddSay('Those two are already connected.');
+  ddSave();
+  const w = { from, to };
+  doodle.wires.push(w);
+  const problem = ddWireProblem(w);
+  if (!problem) ddSay(`Connected: ${ddBox(to).f} is covered.`, 'done');
+  else ddSay(problem, problem.startsWith('Matches') ? 'warn' : 'warn');
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────
+
+function ddRender() {
+  const canvas = document.getElementById('ddCanvas');
+  if (!canvas || !doodle) return;
+  canvas.innerHTML = '';
+  canvas.appendChild(ddRenderLane(0));
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.id = 'ddWires';
+  canvas.appendChild(svg);
+
+  const status = document.getElementById('ddStatus');
+  const rootDone = ddGoalDone(doodle.root);
+  if (ddArmed) {
+    status.textContent = `Now click the goal to connect ${ddBox(ddArmed).f} to (or click the dot again to cancel).`;
+    status.className = 'dd-status';
+  } else if (ddMsg) {
+    status.textContent = ddMsg.text + (rootDone ? '  Plan complete: every goal is covered — now build it in the tree.' : '');
+    status.className = 'dd-status ' + (rootDone ? 'done' : ddMsg.kind);
+  } else {
+    status.textContent = rootDone
+      ? 'Plan complete: every goal is covered — now build it in the tree.'
+      : 'Click a goal (?) to break it down, click a known to see what it gives you, and drag from a known’s dot to a goal to connect them.';
+    status.className = 'dd-status' + (rootDone ? ' done' : '');
+  }
+  document.getElementById('ddUndo').disabled = !doodle.history.length;
+  requestAnimationFrame(ddDrawWires);
+}
+
+function ddRenderLane(lid) {
+  const lane = doodle.lanes[lid];
+  const el = document.createElement('div');
+  el.className = 'dd-lane';
+  if (lane.label) {
+    const h = document.createElement('div');
+    h.className = 'dd-case-h'; h.textContent = lane.label;
+    el.appendChild(h);
+  }
+  const all = Object.values(doodle.boxes).filter(b => b.lane === lid).sort((x, y) => x.id - y.id);
+  const topLevel = kind => all.filter(b => b.kind === kind &&
+    !(b.parent && ddBox(b.parent).kind === kind && ddBox(b.parent).lane === lid));
+  const cols = document.createElement('div');
+  cols.className = 'dd-cols';
+  [['known', 'Known'], ['goal', 'To prove']].forEach(([kind, title]) => {
+    const col = document.createElement('div');
+    const h = document.createElement('div');
+    h.className = 'dd-col-h'; h.textContent = title;
+    col.appendChild(h);
+    const tree = document.createElement('div');
+    tree.className = 'dd-tree';
+    const tops = topLevel(kind);
+    if (!tops.length) {
+      const e = document.createElement('div');
+      e.className = 'dd-empty';
+      e.textContent = kind === 'known' ? 'nothing yet' : 'nothing left here';
+      tree.appendChild(e);
+    }
+    tops.forEach(b => tree.appendChild(ddRenderItem(b, lid)));
+    col.appendChild(tree);
+    cols.appendChild(col);
+  });
+  el.appendChild(cols);
+  if (lane.children.length) {
+    const cases = document.createElement('div');
+    cases.className = 'dd-cases';
+    lane.children.forEach(c => cases.appendChild(ddRenderLane(c)));
+    el.appendChild(cases);
+  }
+  return el;
+}
+
+function ddRenderItem(b, lid) {
+  const item = document.createElement('div');
+  const box = document.createElement('div');
+  box.className = `dd-box ${b.kind}`;
+  box.dataset.id = b.id;
+  if (b.kind === 'goal' && ddGoalDone(b.id)) box.classList.add('done');
+  if (b.kind === 'known' && !ddKnownReady(b, new Set())) box.classList.add('pending');
+  if (b.copies) box.classList.add('split');
+  if (b.num) {
+    const n = document.createElement('span');
+    n.className = 'dd-num'; n.textContent = b.num;
+    box.appendChild(n);
+  }
+  const f = document.createElement('span');
+  f.textContent = b.f;
+  box.appendChild(f);
+  if (b.kind === 'goal') {
+    const m = document.createElement('span');
+    m.className = 'dd-mark';
+    m.textContent = box.classList.contains('done') ? '✓' : '?';
+    box.appendChild(m);
+  }
+  const tag = b.alt ? b.alt
+    : b.copies ? 'split into cases'
+    : b.kind === 'goal' && b.parent && ddBox(b.parent).kind === 'known' ? `needed to use ${ddBox(b.parent).f}`
+    : b.needs && !ddKnownReady(b, new Set()) ? `once ${ddBox(b.needs).f} is proved`
+    : b.caseOf ? `case of ${b.caseOf}`
+    : '';
+  if (tag) {
+    const t = document.createElement('span');
+    t.className = 'dd-tag'; t.textContent = tag;
+    box.appendChild(t);
+  }
+  if (b.kind === 'known') {
+    const h = document.createElement('span');
+    h.className = 'dd-handle' + (ddArmed === b.id ? ' armed' : '');
+    h.title = 'Drag to a goal (or click, then click a goal)';
+    h.addEventListener('pointerdown', e => ddStartDrag(e, b.id));
+    box.appendChild(h);
+  }
+  box.addEventListener('click', e => {
+    if (e.target.classList.contains('dd-handle')) return;
+    if (b.kind === 'goal') ddClickGoal(b); else ddClickKnown(b);
+    ddRender();
+  });
+  item.appendChild(box);
+  const kids = b.children.map(ddBox).filter(c => c.kind === b.kind && c.lane === lid);
+  if (kids.length) {
+    const k = document.createElement('div');
+    k.className = 'dd-kids';
+    kids.forEach(c => k.appendChild(ddRenderItem(c, lid)));
+    item.appendChild(k);
+  }
+  return item;
+}
+
+function ddAnchor(id, side) {
+  const canvas = document.getElementById('ddCanvas');
+  const el = canvas.querySelector(`.dd-box[data-id="${id}"]`);
+  if (!el) return null;
+  const c = canvas.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: (side === 'right' ? r.right : r.left) - c.left, y: r.top + r.height / 2 - c.top };
+}
+
+function ddCurve(a, b) {
+  const dx = Math.max(40, Math.abs(b.x - a.x) / 2);
+  return `M${a.x},${a.y} C${a.x + dx},${a.y} ${b.x - dx},${b.y} ${b.x},${b.y}`;
+}
+
+function ddDrawWires() {
+  const canvas = document.getElementById('ddCanvas');
+  const svg = document.getElementById('ddWires');
+  if (!canvas || !svg || !doodle) return;
+  svg.setAttribute('width', canvas.scrollWidth);
+  svg.setAttribute('height', canvas.scrollHeight);
+  svg.innerHTML = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  doodle.wires.forEach((w, i) => {
+    const a = ddAnchor(w.from, 'right'), b = ddAnchor(w.to, 'left');
+    if (!a || !b) return;
+    const problem = ddWireProblem(w);
+    const cls = !problem ? 'ok' : problem.startsWith('Matches') ? 'pending' : 'bad';
+    const d = ddCurve(a, b);
+    const line = document.createElementNS(NS, 'path');
+    line.setAttribute('d', d); line.setAttribute('fill', 'none');
+    line.setAttribute('stroke-width', '2'); line.setAttribute('class', cls);
+    const hit = document.createElementNS(NS, 'path');
+    hit.setAttribute('d', d); hit.setAttribute('fill', 'none');
+    hit.setAttribute('stroke', 'transparent'); hit.setAttribute('stroke-width', '14');
+    hit.setAttribute('class', 'hit');
+    const title = document.createElementNS(NS, 'title');
+    title.textContent = (problem || 'Matches.') + ' Click to remove this wire.';
+    hit.appendChild(title);
+    hit.addEventListener('click', () => {
+      ddSave(); doodle.wires.splice(i, 1);
+      ddSay('Wire removed.'); ddRender();
+    });
+    svg.appendChild(line); svg.appendChild(hit);
+  });
+}
+
+// ── Wiring by drag, or click-then-click ───────────────────────────────────
+
+function ddStartDrag(e, from) {
+  e.preventDefault(); e.stopPropagation();
+  const svg = document.getElementById('ddWires');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('class', 'temp'); path.setAttribute('fill', 'none'); path.setAttribute('stroke-width', '2');
+  svg.appendChild(path);
+  ddDrag = { from, path, startX: e.clientX, startY: e.clientY, moved: false, target: null };
+  window.addEventListener('pointermove', ddDragMove);
+  window.addEventListener('pointerup', ddDragEnd, { once: true });
+}
+
+function ddGoalAt(x, y) {
+  const el = document.elementFromPoint(x, y)?.closest('.dd-box.goal');
+  return el ? Number(el.dataset.id) : null;
+}
+
+function ddDragMove(e) {
+  if (!ddDrag) return;
+  if (Math.hypot(e.clientX - ddDrag.startX, e.clientY - ddDrag.startY) > 5) ddDrag.moved = true;
+  const c = document.getElementById('ddCanvas').getBoundingClientRect();
+  const a = ddAnchor(ddDrag.from, 'right');
+  ddDrag.path.setAttribute('d', ddCurve(a, { x: e.clientX - c.left, y: e.clientY - c.top }));
+  const t = ddGoalAt(e.clientX, e.clientY);
+  document.querySelectorAll('.dd-box.wire-target').forEach(el => el.classList.remove('wire-target'));
+  if (t != null) document.querySelector(`.dd-box[data-id="${t}"]`)?.classList.add('wire-target');
+}
+
+function ddDragEnd(e) {
+  window.removeEventListener('pointermove', ddDragMove);
+  if (!ddDrag) return;
+  const { from, moved } = ddDrag;
+  ddDrag = null;
+  if (!moved) {                                       // a tap: arm, or disarm
+    ddArmed = ddArmed === from ? null : from;
+    ddMsg = null;
+  } else {
+    const to = ddGoalAt(e.clientX, e.clientY);
+    if (to != null) ddConnect(from, to);
+  }
+  ddRender();
+}
+
+// ── Opening and closing ───────────────────────────────────────────────────
+
+function openDoodle() {
+  if (!proofTree) return;
+  if (!doodle || doodle.formula !== proofTree.formula) ddNew(proofTree.formula);
+  document.getElementById('doodle-modal').classList.add('open');
+  document.getElementById('doodleBtn').classList.add('active');
+  ddRender();
+}
+
+function closeDoodle() {
+  ddArmed = null;
+  document.getElementById('doodle-modal').classList.remove('open');
+  document.getElementById('doodleBtn').classList.remove('active');
+}
+
+document.getElementById('doodleBtn').addEventListener('click', () =>
+  document.getElementById('doodle-modal').classList.contains('open') ? closeDoodle() : openDoodle());
+document.getElementById('ddClose').addEventListener('click', closeDoodle);
+document.getElementById('ddBackdrop').addEventListener('click', closeDoodle);
+document.getElementById('ddUndo').addEventListener('click', ddUndo);
+document.getElementById('ddClear').addEventListener('click', () => {
+  if (!doodle) return;
+  ddSave();
+  const history = doodle.history;
+  ddNew(doodle.formula);
+  doodle.history = history;
+  ddSay('Cleared. Undo brings it back.');
+  ddRender();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('doodle-modal').classList.contains('open')) closeDoodle();
+});
+window.addEventListener('resize', () => { if (doodle) requestAnimationFrame(ddDrawWires); });
+
 function startProof() {
   // Validate name first
   const nameResult = sanitiseName(document.getElementById('studentName').value);
@@ -2843,6 +3456,7 @@ function startProof() {
   clearTimeout(celebrationTimeout); celebrationTimeout=null;
   proofTree=newNode(formulaStr);
   proofTree.status='warn';
+  closeDoodle(); ddNew(formulaStr);
   // Start timer
   startTimer(); // filled but not proved yet
 
@@ -2857,6 +3471,7 @@ function startProof() {
 }
 
 function resetProof() {
+  closeDoodle(); doodle=null;
   proofTree=null; hypotheses={}; nextHypNum=1; nodeIdCounter=0; proofJustCompleted=false;
   clearTimeout(celebrationTimeout); celebrationTimeout=null;
   stopTimer();
