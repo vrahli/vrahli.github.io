@@ -1082,89 +1082,24 @@ function sanitiseName(raw) {
 }
 
 // ── Scoring ────────────────────────────────────────────────────────────────
+// All scoring lives in the worker (worker/index.js), so the score shown here
+// is always the one the leaderboard will save. Description of the live
+// version, filled in when the leaderboard loads:
+let scoringInfo = null;
 
-function countConnectives(ast) {
-  if (!ast || ast.op==='ATOM' || ast.op==='BOT') return 0;
-  if (ast.op==='NEG') return 1 + countConnectives(ast.sub);
-  return 1 + countConnectives(ast.left) + countConnectives(ast.right);
-}
-
-// Canonical string for an AST node.
-// For associative operators (∧, ∨) we flatten chains of the same
-// operator, deduplicate and sort — so A∨A∨A∨…∨A has the same
-// canonical form as a single A∨A, defeating formula-padding.
-function canonical(node) {
-  if (!node) return '?';
-  switch (node.op) {
-    case 'ATOM':
-      return node.args.length === 0
-        ? node.name
-        : node.name + '(' + node.args.map(a => a.type === 'VAR' ? a.name : a.name).join(',') + ')';
-    case 'BOT':  return '⊥';
-    case 'NEG':  return '¬' + canonical(node.sub);
-    case 'IMP':  return '(' + canonical(node.left) + '→' + canonical(node.right) + ')';
-    case 'FORALL': return '∀' + node.var + '.' + canonical(node.body);
-    case 'EXISTS': return '∃' + node.var + '.' + canonical(node.body);
-    case 'AND':
-    case 'OR': {
-      // Flatten the chain of same-op nodes, canonicalize leaves,
-      // deduplicate and sort for a set-based representation.
-      const leaves = [];
-      (function collect(n) {
-        if (n.op === node.op) { collect(n.left); collect(n.right); }
-        else leaves.push(n);
-      })(node);
-      const uniq = [...new Set(leaves.map(canonical))].sort();
-      return (node.op === 'AND' ? '∧' : '∨') + '{' + uniq.join(',') + '}';
-    }
-    default: return '?';
+async function fetchScore(formula, elapsed) {
+  try {
+    const resp = await fetch(`${WORKER_URL}/score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ formula, elapsed }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) return { ok: false, error: data.error || `HTTP ${resp.status}` };
+    return data;
+  } catch (e) {
+    return { ok: false, error: 'Could not reach the scoring server.' };
   }
-}
-
-// Collect every distinct subformula (by canonical string).
-// For ∧/∨ chains we recurse into the flattened leaves, not the
-// intermediate binary nodes, so padding adds nothing.
-function distinctSubformulas(ast) {
-  const seen = new Set();
-  function walk(node) {
-    if (!node) return;
-    const c = canonical(node);
-    if (seen.has(c)) return;         // already counted
-    seen.add(c);
-    if (node.op === 'AND' || node.op === 'OR') {
-      // recurse into the deduplicated chain leaves
-      const visited = new Set();
-      (function collect(n) {
-        if (n.op === node.op) { collect(n.left); collect(n.right); }
-        else {
-          const k = canonical(n);
-          if (!visited.has(k)) { visited.add(k); walk(n); }
-        }
-      })(node);
-    } else if (node.op === 'NEG') {
-      walk(node.sub);
-    } else if (node.op === 'FORALL' || node.op === 'EXISTS') {
-      walk(node.body);
-    } else if (node.op === 'IMP') {
-      walk(node.left); walk(node.right);
-    }
-    // ATOM / BOT — no children
-  }
-  walk(ast);
-  return seen.size;
-}
-
-function computeScore(formulaStr, elapsedSeconds) {
-  const ast = tryParse(formulaStr);
-  const connectives = ast ? countConnectives(ast) : 1;
-  const dsf = ast ? distinctSubformulas(ast) : 1;
-  // Complexity = distinct subformulas × 30
-  // Time penalty: free budget of dsf × 8 seconds, then √(overtime) × 5
-  const complexity = dsf * 30;
-  const budget = dsf * 8;
-  const overtime = Math.max(0, elapsedSeconds - budget);
-  const raw = complexity - 5 * Math.sqrt(overtime);
-  return { score: Math.max(1, Math.round(raw)), connectives, complexity, dsf, budget, elapsedSeconds };
 }
 
 function newNode(formula) {
@@ -3009,23 +2944,22 @@ document.getElementById('generateBtn').addEventListener('click', () => {
   };
 })();
 
+let celebrationToken = 0;
+
 function celebrateCompletion() {
   if (!proofTree || !isProofComplete(proofTree)) return;
   const elapsed  = stopTimer();
   const formula  = proofTree ? proofTree.formula : '';
-  const { score, connectives, complexity, dsf } = computeScore(formula, elapsed);
-
-  // Record in local history and persist
-  proofHistory.push({ formula, elapsed, score, complexity, date: new Date().toISOString() });
+  // Record in local history; the score is filled in once the worker replies
+  const historyEntry = { formula, elapsed, score: null, complexity: null, date: new Date().toISOString() };
+  proofHistory.push(historyEntry);
   saveHistory(proofHistory);
 
-  // Set up pending leaderboard entry
+  // Set up pending leaderboard entry (the worker computes the saved score)
   pendingEntry = {
     name:    currentStudentName || 'Anonymous',
     formula,
-    score,
     elapsed,
-    connectives, complexity,
     date: new Date().toISOString(),
   };
 
@@ -3039,12 +2973,23 @@ function celebrateCompletion() {
   line2.textContent = formula;
   const line3 = document.createElement('p');
   line3.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:.72rem;color:var(--accent2);margin-top:4px';
-  line3.textContent = `⏱ ${formatTime(elapsed)}  ·  ${dsf} distinct subformula${dsf!==1?'s':''}`;
+  line3.textContent = `⏱ ${formatTime(elapsed)}`;
   body.appendChild(line1); body.appendChild(line2); body.appendChild(line3);
 
-  // Score display
+  // Score display — ask the worker, ignore the reply if another proof has
+  // been celebrated in the meantime
   const scoreEl = document.getElementById('score-display');
-  scoreEl.textContent = `Score: ${score}`;
+  scoreEl.textContent = 'Scoring…';
+  const token = ++celebrationToken;
+  fetchScore(formula, elapsed).then(r => {
+    if (token !== celebrationToken) return;
+    if (!r.ok) { scoreEl.textContent = `Score unavailable — ${r.error}`; return; }
+    scoreEl.textContent = `Score: ${r.score}`;
+    line3.textContent = `⏱ ${formatTime(elapsed)}  ·  ${r.detail}`;
+    historyEntry.score = r.score;
+    historyEntry.complexity = r.complexity;
+    saveHistory(proofHistory);
+  });
 
   // Show submit button only if student has a name
   const submitRow = document.getElementById('submit-row');
@@ -3166,6 +3111,7 @@ async function loadLeaderboard() {
       const resp = await fetch(`${WORKER_URL}/scores`);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
+      if (data.scoring) scoringInfo = data.scoring;
       if (Array.isArray(data.scores)) return { ok: true, scores: data.scores };
       throw new Error('Unexpected response format');
     } catch(e) {
@@ -3246,7 +3192,7 @@ function aggregateByStudent(entries) {
 
 const TAB_CONFIG = {
   score: {
-    desc:  'Best single proof score. Score = subformulas × 30 − 5 × √(overtime). Free time budget: subformulas × 8s.',
+    get desc() { return 'Best single proof score. ' + (scoringInfo?.describe || ''); },
     sort:  (a,b) => b.bestScore - a.bestScore,
     value: s => s.bestScore,
     sub:   s => s.bestFormula,
@@ -3258,7 +3204,7 @@ const TAB_CONFIG = {
     sub:   () => '',
   },
   efficiency: {
-    desc:  'Best seconds-per-complexity across all proofs (lower = faster). Complexity = distinct subformulas.',
+    get desc() { return 'Best seconds-per-complexity across all proofs (lower = faster).' + (scoringInfo ? ` Complexity = ${scoringInfo.complexityName}.` : ''); },
     sort:  (a,b) => { if(a.bestEff===null)return 1; if(b.bestEff===null)return -1; return a.bestEff-b.bestEff; },
     value: s => s.bestEff !== null ? s.bestEff.toFixed(1)+'s/cplx' : '—',
     sub:   s => s.bestEffFormula ? `${s.bestEffFormula}  (${formatTime(s.bestEffElapsed)})` : '',
