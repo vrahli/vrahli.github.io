@@ -478,7 +478,10 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
     <tr><td>_|_&nbsp; or &nbsp;\bot</td><td>⊥</td><td>false</td></tr>
     <tr><td>\forall x. P</td><td>∀</td><td>universal</td></tr>
     <tr><td>\exists x. P</td><td>∃</td><td>existential</td></tr>
+    <tr><td>A -&gt; B {-&gt;I}</td><td>{ }</td><td>formula, then apply a rule</td></tr>
+    <tr><td>A {2}</td><td>{n}</td><td>formula, then cancel hypothesis n</td></tr>
   </table>
+  <p style="font-size:.72rem;color:var(--chalk-dim);margin-top:8px;line-height:1.5">Rule names in braces: →I →E ∧I ∧E1 ∧E2 ∨I1 ∨I2 ∨E ¬I ¬E ⊥E DNE LEM ∀I ∀E ∃I ∃E. Type them with the usual shortcuts, e.g. {/\I}, {\/I2}, {~E}, {_|_E}.</p>
 </div>
 <div id="rules-popup">
   <h3>INFERENCE RULES</h3>
@@ -1626,6 +1629,7 @@ function buildNodeCard(node, isRoot) {
     const inp = document.createElement('input');
     inp.type='text'; inp.className='node-formula-input';
     inp.value=node.formula||''; inp.placeholder='Enter formula…';
+    inp.title='Optionally add a rule in braces, e.g. A ∧ B {∧I}, or a hypothesis number to cancel, e.g. A {2}';
     inp.autocomplete='off'; inp.spellcheck=false;
     inp.addEventListener('change', () => handleFormulaEdit(node, inp.value));
     inp.addEventListener('keydown', e => { if(e.key==='Enter') handleFormulaEdit(node, inp.value); });
@@ -2017,7 +2021,91 @@ async function applyRule(node, ruleId) {
 //  EVENT HANDLERS
 // ═══════════════════════════════════════════
 
+// ── Inline rule shortcut ───────────────────────────────────────────────────
+// A formula box also accepts "formula {rule}" (apply that rule, e.g.
+// "A -> B {->I}") or "formula {n}" (cancel hypothesis n, e.g. "A {2}").
+// The dropdown still works as before; this is just a faster way in.
+
+function splitRuleSuffix(val) {
+  const m = val.match(/^([\s\S]*?)\s*\{\s*([^{}]*?)\s*\}\s*$/);
+  if (m) return { formula: m[1], rule: m[2] };
+  // Formulas never contain braces, so a stray one means a mistyped rule.
+  if (/[{}]/.test(val)) return { formula: val, rule: null, malformed: true };
+  return { formula: val, rule: null };
+}
+
+function reportMalformedRule(val) {
+  showFeedback('err', 'Rule not recognised',
+    `\`${val.trim()}\` has a brace but not a rule in the form {rule}. Put the rule at the end with curly braces on both sides, e.g. \`¬A {¬I}\`, \`A ∧ B {∧I}\`, or \`A {2}\` to cancel hypothesis 2.`);
+}
+
+const INLINE_RULES = {
+  '→I':'imp-i', '→E':'imp-e', 'MP':'imp-e',
+  '∧I':'and-i', '∧E1':'and-e-l', '∧EL':'and-e-l', '∧E2':'and-e-r', '∧ER':'and-e-r',
+  '∨I1':'or-i-l', '∨IL':'or-i-l', '∨I2':'or-i-r', '∨IR':'or-i-r', '∨E':'or-e',
+  '¬I':'neg-i', '¬E':'neg-e', '⊥E':'bot-e', 'EFQ':'bot-e',
+  'DNE':'dne', '¬¬E':'dne', 'LEM':'lem',
+  '∀I':'forall-i', '∀E':'forall-e', '∃I':'exists-i', '∃E':'exists-e',
+};
+
+function resolveInlineRule(token) {
+  if (/^\d+$/.test(token.trim())) {
+    const n = parseInt(token, 10);
+    return n >= 1 ? { cancelNum: n } : { error: 'Hypothesis numbers start at 1.' };
+  }
+  const key = token
+    .replace(/\\to|->/g, '→')
+    .replace(/\\land|\\and|\/\\/g, '∧')
+    .replace(/\\lor|\\or|\\\//g, '∨')
+    .replace(/\\lneg|\\neg|\\not|~/g, '¬')
+    .replace(/\\bot|\\false|_\|_/g, '⊥')
+    .replace(/\\forall|\\all/g, '∀')
+    .replace(/\\exists|\\ex/g, '∃')
+    .replace(/₁/g, '1').replace(/₂/g, '2')
+    .replace(/\s+/g, '').toUpperCase();
+  if (INLINE_RULES[key]) return { ruleId: INLINE_RULES[key] };
+  if (key === '∧E') return { error: 'Say which side: {∧E1} keeps the left conjunct, {∧E2} the right one.' };
+  if (key === '∨I') return { error: 'Say which side: {∨I1} proves the left disjunct, {∨I2} the right one.' };
+  return { error: `"${token}" is not a rule name. Try {→I}, {∧E1}, {∨I2}, {¬E}, {∀I}, …, or a hypothesis number such as {2}.` };
+}
+
+async function applyInlineRule(node, token) {
+  const r = resolveInlineRule(token);
+  if (r.error) { showFeedback('err', 'Unknown rule', r.error); return; }
+  if (node.rule) {
+    showFeedback('info', 'Rule already chosen',
+      `This step already uses ${ruleById(node.rule)?.label}. Clear the rule first if you want a different one.`);
+    return;
+  }
+  if (r.cancelNum) {
+    await applyRule(node, 'cancel');
+    handleCancelNum(node, String(r.cancelNum));
+    return;
+  }
+  await applyRule(node, r.ruleId);
+}
+
+// Pressing Enter re-renders the tree, which removes the focused input and makes
+// the browser fire its 'change' event in the middle of the first call. Ignore
+// that nested call: the entry is already being handled.
+let formulaEditBusy = false;
+
 function handleFormulaEdit(node, val) {
+  if (formulaEditBusy) return;
+  const { formula, rule, malformed } = splitRuleSuffix(val);
+  if (malformed) { reportMalformedRule(val); return; }
+  // A late duplicate of an entry whose rule was already applied: nothing to do.
+  if (rule !== null && node.rule && node.lastInlineEntry === val) return;
+  formulaEditBusy = true;
+  try { handleFormulaEditCore(node, formula); }
+  finally { formulaEditBusy = false; }
+  if (rule === null) return;
+  if (!node.formula || node.status === 'err') return;   // formula problem already reported
+  node.lastInlineEntry = val;
+  applyInlineRule(node, rule);
+}
+
+function handleFormulaEditCore(node, val) {
   const trimmed = val.trim();
   node.formula = trimmed;
   node.isOpen  = !trimmed;
@@ -2710,11 +2798,11 @@ document.addEventListener('click', e => {
 const rootInput = document.getElementById('rootInput');
 attachLiveRender(rootInput);
 rootInput.addEventListener('input', () => {
-  const val     = rootInput.value;
+  const { formula: val, rule } = splitRuleSuffix(rootInput.value);
   const preview = document.getElementById('rootPreview');
   if (!val.trim()) { preview.textContent = ''; return; }
   const ast = tryParse(val);
-  preview.textContent = ast ? fmtAST(ast) : '';
+  preview.textContent = ast ? fmtAST(ast) + (rule ? `   {${rule}}` : '') : '';
   preview.style.color = ast ? 'var(--accent)' : 'var(--chalk-faint)';
 });
 rootInput.addEventListener('keydown', e => { if (e.key === 'Enter') startProof(); });
@@ -2739,7 +2827,9 @@ function startProof() {
   }
   nameError.textContent = '';
   currentStudentName = nameResult.name;
-  const val=document.getElementById('rootInput').value.trim();
+  const { formula: rootFormula, rule: inlineRule, malformed } = splitRuleSuffix(document.getElementById('rootInput').value);
+  if (malformed) { reportMalformedRule(rootFormula); return; }
+  const val=rootFormula.trim();
   if (!val) return;
   const ast=tryParse(val);
   if (!ast) {
@@ -2763,6 +2853,7 @@ function startProof() {
   helpBar.style.display='flex';
   renderTree(); updateHypPanel();
   showFeedback('info','Proof Started',`Now proving: ${formulaStr}. Select a rule from the dropdown on the root node to begin.`);
+  if (inlineRule !== null) applyInlineRule(proofTree, inlineRule);
 }
 
 function resetProof() {
