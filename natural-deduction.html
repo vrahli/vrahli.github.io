@@ -58,10 +58,11 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
 
 .generate-section{width:100%;display:flex;flex-direction:column;gap:8px;align-items:center}
 .generate-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--chalk-faint);letter-spacing:.08em}
-.generate-row{display:flex;gap:10px;align-items:center;width:100%;justify-content:center}
+.generate-row{display:flex;gap:10px;align-items:center;width:100%;justify-content:center;flex-wrap:wrap}
 .gen-atoms-label{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--chalk-dim);white-space:nowrap}
 .gen-atoms-input{width:60px;background:var(--node-bg);border:1px solid var(--node-border);color:var(--chalk);font-family:'JetBrains Mono',monospace;font-size:.9rem;padding:8px 10px;border-radius:6px;outline:none;text-align:center;transition:border-color .2s}
 .gen-atoms-input:focus{border-color:var(--accent)}
+.gen-field{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
 .gen-status{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--chalk-dim);min-height:1.2em;text-align:center}
 .syntax-hint{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:16px 20px;width:100%}
 .syntax-hint h3{font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--accent2);letter-spacing:.1em;margin-bottom:10px}
@@ -492,8 +493,14 @@ header .subtitle{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:va
           <div class="generate-section">
             <div class="generate-label">— or generate a provable formula —</div>
             <div class="generate-row">
-              <label class="gen-atoms-label" for="genAtoms">Atoms (1–5):</label>
-              <input id="genAtoms" type="number" min="1" max="5" value="2" class="gen-atoms-input"/>
+              <span class="gen-field" title="How many different atoms (1–5); each is used at least twice">
+                <label class="gen-atoms-label" for="genAtoms">Atoms:</label>
+                <input id="genAtoms" type="number" min="1" max="5" value="2" class="gen-atoms-input"/>
+              </span>
+              <span class="gen-field" title="Up to this many connectives (1–12); the formula gets between about half this and this many">
+                <label class="gen-atoms-label" for="genConns">Max connectives:</label>
+                <input id="genConns" type="number" min="1" max="12" value="5" class="gen-atoms-input"/>
+              </span>
               <button class="btn-secondary" id="generateBtn">⚄ Generate</button>
             </div>
             <div id="genStatus" class="gen-status"></div>
@@ -3527,57 +3534,141 @@ function isTautology(ast) {
 //  FORMULA GENERATOR
 // ═══════════════════════════════════════════
 
-function randomAST(atoms, maxDepth) {
-  const leaf = () => ({ op:'ATOM', name: atoms[Math.floor(Math.random() * atoms.length)], args:[] });
-  function build(depth) {
-    if (depth <= 0) return leaf();
+// A random formula with exactly `conns` connectives that uses every atom in
+// `atoms` at least twice (returns null if it has too few leaves for that).
+// Twice, because an atom used only once is always padding: replacing it by
+// ⊥ or ⊤ keeps a tautology a tautology.
+function randomAST(atoms, conns) {
+  function shape(k) {
+    if (k === 0) return { op:'ATOM' };
     const r = Math.random();
-    if (r < 0.10) return leaf();
-    if (r < 0.25) return { op:'NEG', sub: build(depth - 1) };
-    if (r < 0.45) return { op:'AND', left: build(depth - 1), right: build(depth - 1) };
-    if (r < 0.60) return { op:'OR',  left: build(depth - 1), right: build(depth - 1) };
-    return           { op:'IMP', left: build(depth - 1), right: build(depth - 1) };
+    if (r < 0.15) return { op:'NEG', sub: shape(k - 1) };
+    const l = Math.floor(Math.random() * k);          // connectives on the left
+    const op = r < 0.55 ? 'IMP' : r < 0.78 ? 'AND' : 'OR';
+    return { op, left: shape(l), right: shape(k - 1 - l) };
   }
-  return build(maxDepth);
+  const tree = shape(conns);
+  const leaves = [];
+  (function collect(n) {
+    if (n.op === 'ATOM') leaves.push(n);
+    else if (n.op === 'NEG') collect(n.sub);
+    else { collect(n.left); collect(n.right); }
+  })(tree);
+  if (leaves.length < 2 * atoms.length) return null;
+  // every atom twice, the rest random, in a random order
+  const names = [...atoms, ...atoms];
+  while (names.length < leaves.length) names.push(atoms[Math.floor(Math.random() * atoms.length)]);
+  for (let i = names.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [names[i], names[j]] = [names[j], names[i]];
+  }
+  leaves.forEach((leaf, i) => { leaf.name = names[i]; leaf.args = []; });
+  return tree;
 }
 
-function generateTautology(numAtoms, maxTries = 8000) {
+// Is it still a tautology with `target` replaced by the constant `value`?
+function tautologyWithout(ast, atoms, target, value) {
+  function ev(n, env) {
+    if (n === target) return value;
+    switch (n.op) {
+      case 'ATOM': return env[n.name] === true;
+      case 'BOT':  return false;
+      case 'NEG':  return !ev(n.sub, env);
+      case 'AND':  return ev(n.left, env) && ev(n.right, env);
+      case 'OR':   return ev(n.left, env) || ev(n.right, env);
+      case 'IMP':  return !ev(n.left, env) || ev(n.right, env);
+      default:     return false;
+    }
+  }
+  for (let mask = 0; mask < (1 << atoms.length); mask++) {
+    const env = {};
+    atoms.forEach((a, i) => { env[a] = !!(mask & (1 << i)); });
+    if (!ev(ast, env)) return false;
+  }
+  return true;
+}
+
+// Does the formula contain padding, in the scoring's sense? A part is padding
+// if replacing it with ⊥ (where it is being proved) or ⊤ (where it is assumed)
+// leaves a tautology. KEEP IN STEP with stripPadding in worker/index.js: the
+// worker strips such parts when scoring, so formulas with any are avoided here.
+function hasPadding(ast) {
+  const atoms = [...collectAtoms(ast)];
+  const parts = [];
+  (function walk(n, pos, isRoot) {
+    if (!isRoot && !(n.op === 'BOT' && pos)) parts.push([n, pos]);
+    if (n.op === 'NEG') walk(n.sub, !pos, false);
+    else if (n.op === 'IMP') { walk(n.left, !pos, false); walk(n.right, pos, false); }
+    else if (n.op === 'AND' || n.op === 'OR') { walk(n.left, pos, false); walk(n.right, pos, false); }
+  })(ast, true, true);
+  return parts.some(([n, pos]) => tautologyWithout(ast, atoms, n, !pos));
+}
+
+// Search for a padding-free tautology using exactly `numAtoms` atoms, with
+// between about half of `maxConns` and `maxConns` connectives. Works in short
+// slices so the page stays responsive; gives up after `budgetMs`.
+// Each atom appears at least twice, so 2n leaves and 2n − 1 binary connectives.
+function minConnectivesFor(numAtoms) { return 2 * numAtoms - 1; }
+
+function generateTautology(numAtoms, maxConns, budgetMs = 3000) {
   const atomNames = ['A','B','C','D','E'].slice(0, numAtoms);
-  const maxDepth  = numAtoms + 2;
-  for (let i = 0; i < maxTries; i++) {
-    const ast = randomAST(atomNames, maxDepth);
-    if (ast.op === 'ATOM') continue;
-    if (ast.op === 'NEG' && ast.sub?.op === 'ATOM') continue;
-    if (!isTautology(ast)) continue;
-    return fmtAST(ast);
-  }
-  return null;
+  const minConns = Math.max(minConnectivesFor(numAtoms), Math.ceil(maxConns / 2));
+  const start = performance.now();
+  return new Promise(resolve => {
+    (function slice() {
+      const sliceEnd = performance.now() + 25;
+      while (performance.now() < sliceEnd) {
+        const k = minConns + Math.floor(Math.random() * (maxConns - minConns + 1));
+        const ast = randomAST(atomNames, k);
+        if (!ast || !isTautology(ast) || hasPadding(ast)) continue;
+        return resolve(fmtAST(ast));
+      }
+      if (performance.now() - start > budgetMs) return resolve(null);
+      setTimeout(slice, 0);
+    })();
+  });
 }
 
-document.getElementById('generateBtn').addEventListener('click', () => {
+document.getElementById('generateBtn').addEventListener('click', async () => {
   const btn    = document.getElementById('generateBtn');
   const status = document.getElementById('genStatus');
-  const nRaw   = parseInt(document.getElementById('genAtoms').value);
-  const n      = Math.max(1, Math.min(5, isNaN(nRaw) ? 2 : nRaw));
+  const read = (id, lo, hi, dflt) => {
+    const v = parseInt(document.getElementById(id).value);
+    const n = Math.max(lo, Math.min(hi, isNaN(v) ? dflt : v));
+    document.getElementById(id).value = n;
+    return n;
+  };
+  const n = read('genAtoms', 1, 5, 2);
+  const c = read('genConns', 1, 12, 5);
+  if (c < minConnectivesFor(n)) {
+    const m = minConnectivesFor(n);
+    status.textContent = `✗ ${n} atom${n>1?'s':''} need at least ${m} connective${m>1?'s':''}: each atom has to appear twice`;
+    status.style.color = 'var(--red)';
+    return;
+  }
 
   btn.disabled = true;
   status.textContent = 'Searching…';
   status.style.color = 'var(--chalk-faint)';
-
-  setTimeout(() => {
-    const formula = generateTautology(n);
-    btn.disabled = false;
-    if (formula) {
-      rootInput.value = formula;
-      rootInput.dispatchEvent(new Event('input'));
-      status.textContent = `✓ Found a provable formula with ${n} atom${n>1?'s':''}`;
-      status.style.color = 'var(--green)';
-    } else {
-      status.textContent = '✗ Could not find one — try again or change the atom count';
-      status.style.color = 'var(--red)';
-    }
-  }, 20);
+  const formula = await generateTautology(n, c);
+  btn.disabled = false;
+  if (formula) {
+    rootInput.value = formula;
+    rootInput.dispatchEvent(new Event('input'));
+    const k = genCountConnectives(tryParse(formula));
+    status.textContent = `✓ Found a provable formula with ${n} atom${n>1?'s':''} and ${k} connective${k>1?'s':''}`;
+    status.style.color = 'var(--green)';
+  } else {
+    status.textContent = '✗ Could not find one in time — try again, or allow more connectives';
+    status.style.color = 'var(--red)';
+  }
 });
+
+function genCountConnectives(ast) {
+  if (!ast || ast.op === 'ATOM' || ast.op === 'BOT') return 0;
+  if (ast.op === 'NEG') return 1 + genCountConnectives(ast.sub);
+  return 1 + genCountConnectives(ast.left) + genCountConnectives(ast.right);
+}
 
 // ═══════════════════════════════════════════
 //  FIREWORKS
